@@ -7,6 +7,8 @@
 #include "map.h"
 #include "error.h"
 
+#define NB_CARACTERISTIQUES 6
+
 #ifdef PADAWAN
 
 int verif_tableau(int *tableau, int tailleTableau, int objet){
@@ -61,8 +63,6 @@ void map_save (char *filename)
 	write(map, &hauteur, sizeof(int));
 	write(map, &nb_objets, sizeof(int));
 
-	int objet;
-
 	//Création d'un tableau d'objets de taille nb_objets pour stocker les objets différents rencontrés.
 	int *tableau_objets = NULL;
 	int index = 0;
@@ -74,38 +74,39 @@ void map_save (char *filename)
 	}
 
 	//Parcours de l'ensemble de la carte et récupération des objets aux coordonées
+
+	int tab_carte[largeur];
+
 	for (int y = 0; y < hauteur; y++){
 		for (int x = 0; x < largeur; x++){
-			objet = map_get (x,y);
-			write(map, &objet, sizeof(int));
+			tab_carte[i] = map_get (x,y);
 			//Vérification que l'objet courant est nouveau
-			if (objet != -1 && verif_tableau(tableau_objets, nb_objets, objet) == 0){
-				tableau_objets[index] = objet;
+			if (tab_carte[i] != -1 && verif_tableau(tableau_objets, nb_objets, tab_carte[i]) == 0){
+				tableau_objets[index] = tab_carte[i];
 				index ++;
 			}
 		}
+		write(map, &tab_carte, largeur * sizeof(int));
 	}
 
 	//Ecriture pour chaque objet des informations le concernant
+
+	int tab_cara[NB_CARACTERISTIQUES];
+
 	for (int i = 0; i < nb_objets; i++){
 		fprintf(stderr, "Debut objets\n");
 		fprintf(stderr, "%d\n", tableau_objets[i]);
 		char *nom_objet = map_get_name(tableau_objets[i]);
 		
-		int taille_nom = strlen(nom_objet);
-		int nb_sprites = map_get_frames(tableau_objets[i]);
-		int solid = map_get_solidity(tableau_objets[i]);
-		int destructible = map_is_destructible(tableau_objets[i]);
-		int collectible = map_is_collectible(tableau_objets[i]);
-		int generator = map_is_generator(tableau_objets[i]);
+		tab_cara[0] = strlen(nom_objet);
+		tab_cara[1] = map_get_frames(tableau_objets[i]);
+		tab_cara[2] = map_get_solidity(tableau_objets[i]);
+		tab_cara[3] = map_is_destructible(tableau_objets[i]);
+		tab_cara[4] = map_is_collectible(tableau_objets[i]);
+		tab_cara[5] = map_is_generator(tableau_objets[i]);
 
-		write(map, &taille_nom, sizeof(int));
-		write(map, nom_objet, taille_nom*sizeof(char));
-		write(map, &nb_sprites, sizeof(int));
-		write(map, &solid, sizeof(int));
-		write(map, &destructible, sizeof(int));
-		write(map, &collectible, sizeof(int));
-		write(map, &generator, sizeof(int));
+		write(map, &tab_cara, NB_CARACTERISTIQUES * sizeof(int));
+	
 		fprintf(stderr, "fin objets\n");
 
 	}
