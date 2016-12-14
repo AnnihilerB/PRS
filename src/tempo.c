@@ -24,16 +24,64 @@ static unsigned long get_time (void)
 
 #ifdef PADAWAN
 
+void* param_global = NULL; 
+void handler(int s)
+{
+  if (param != NULL)
+     printf("sdl_push_event(%p) appelée au temps %ld\n", param_global, get_time());
+  else
+     printf("test: %d\n", (int)pthread_self());
+}
+void *f (void* arg)
+{
+   struct sigaction sg;
+   sg.sa_flags = 0;
+   sg.sa_handler = handler;
+   sigemptyset(&sg.sa_mask);
+   sigaddset(&sg.sa_mask, SIGALRM);
+   
+   sigaction(SIGALRM, &sg, NULL);
+   
+   sigset_t old_mask;
+   
+   sigprocmask(SIG_BLOCK, &sg.sa_mask, &old_mask);
+   
+   sigsuspend(&old_mask);
+}
+
 // timer_init returns 1 if timers are fully implemented, 0 otherwise
 int timer_init (void)
 {
-  // TODO
+  pthread_t th;
+  pthread_create(&th, NULL, f, NULL);
+  alarm(1);
+  alarm(1);
+  alarm(1);
+  
+  
   return 0; // Implementation not ready
 }
+/*
+jmp_buf buf;
+void handler (int s)
+{
+    siglongjmp(buf, 1);
+}*/
 
 void timer_set (Uint32 delay, void *param)
 {
-  // TODO
+    struct itimerval ti;
+    ti.it_interval = 0;
+    ti.it_value.tv_usec = delay;
+    param_global = param;
+    setitimer(ITIMER_REAL, &ti, NULL);
+    
 }
 
+int main(int argc, char* argv[])
+{
+  timer_init();
+  return 0;
+}
 #endif
+
