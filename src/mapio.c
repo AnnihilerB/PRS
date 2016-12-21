@@ -61,7 +61,6 @@ void map_save (char *filename)
 
 	write(map, &largeur, sizeof(int));
 	write(map, &hauteur, sizeof(int));
-	write(map, &nb_objets, sizeof(int));
 
 	//Création d'un tableau d'objets de taille nb_objets pour stocker les objets différents rencontrés.
 	int *tableau_objets = NULL;
@@ -79,10 +78,10 @@ void map_save (char *filename)
 
 	for (int y = 0; y < hauteur; y++){
 		for (int x = 0; x < largeur; x++){
-			tab_carte[i] = map_get (x,y);
+			tab_carte[x] = map_get (x,y);
 			//Vérification que l'objet courant est nouveau
-			if (tab_carte[i] != -1 && verif_tableau(tableau_objets, nb_objets, tab_carte[i]) == 0){
-				tableau_objets[index] = tab_carte[i];
+			if (tab_carte[x] != -1 && verif_tableau(tableau_objets, nb_objets, tab_carte[x]) == 0){
+				tableau_objets[index] = tab_carte[x];
 				index ++;
 			}
 		}
