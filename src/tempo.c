@@ -1,3 +1,5 @@
+#define _XOPEN_SOURCE 600
+
 #include <SDL.h>
 #include <unistd.h>
 #include <stdlib.h>
@@ -27,7 +29,7 @@ static unsigned long get_time (void)
 void* param_global = NULL; 
 void handler(int s)
 {
-  if (param != NULL)
+  if (param_global != NULL)
      printf("sdl_push_event(%p) appelée au temps %ld\n", param_global, get_time());
   else
      printf("test: %d\n", (int)pthread_self());
@@ -71,7 +73,7 @@ void handler (int s)
 void timer_set (Uint32 delay, void *param)
 {
     struct itimerval ti;
-    ti.it_interval = 0;
+    //ti.it_interval = NULL; Incompatibel pointer type a voir
     ti.it_value.tv_usec = delay;
     param_global = param;
     setitimer(ITIMER_REAL, &ti, NULL);
