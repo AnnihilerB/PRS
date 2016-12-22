@@ -49,6 +49,8 @@ void map_new (unsigned width, unsigned height)
 
 void map_save (char *filename)
 {
+    
+        filename = "saved.map";
 
 	int map = open(filename, O_WRONLY | O_CREAT, 0666);
 
@@ -56,7 +58,7 @@ void map_save (char *filename)
 	int hauteur = (int)map_height();
 	int largeur = (int)map_width();
 	//int nb_objets = (int)map_objects();
-	int nb_objets = 1;
+	int nb_objets = 0;
 	fprintf(stderr, "%d\n", nb_objets);
 
 	write(map, &largeur, sizeof(int));
@@ -74,19 +76,25 @@ void map_save (char *filename)
 
 	//Parcours de l'ensemble de la carte et récupération des objets aux coordonées
 
-	int tab_carte[largeur];
+	int taille_carte = largeur * hauteur;
+	int tab_carte[taille_carte];
 
+        int i = 0;
 	for (int y = 0; y < hauteur; y++){
 		for (int x = 0; x < largeur; x++){
-			tab_carte[x] = map_get (x,y);
+			tab_carte[i] = map_get (x,y);
 			//Vérification que l'objet courant est nouveau
-			if (tab_carte[x] != -1 && verif_tableau(tableau_objets, nb_objets, tab_carte[x]) == 0){
-				tableau_objets[index] = tab_carte[x];
+			if (tab_carte[i] != -1 && verif_tableau(tableau_objets, nb_objets, tab_carte[i]) == 0){
+				tableau_objets[index] = tab_carte[i];
 				index ++;
+                                nb_objets++;
 			}
+                        i++;
 		}
-		write(map, &tab_carte, largeur * sizeof(int));
 	}
+	write(map, &nb_objets, sizeof(int));
+        printf("Objets : %d\n", nb_objets);
+	write(map, &tab_carte, taille_carte * sizeof(int));
 
 	//Ecriture pour chaque objet des informations le concernant
 
