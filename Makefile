@@ -31,7 +31,7 @@ $(LIB): $(filter-out $(CUSTOM_OBJ),$(OBJECTS))
 endif
 
 $(PROGRAM): $(CUSTOM_OBJ) $(LIB)
-	$(CC) -o $@ $^ $(LDFLAGS) -lpthread $(LDLIBS)
+	$(CC) -o $@ $^ $(LDFLAGS) $(LDLIBS) -lpthread
 
 $(OBJECTS): obj/%.o: src/%.c
 	$(CC) -o $@ $(CFLAGS) -c $<

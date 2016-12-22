@@ -79,11 +79,5 @@ void timer_set (Uint32 delay, void *param)
     setitimer(ITIMER_REAL, &ti, NULL);
     
 }
-
-int main(int argc, char* argv[])
-{
-  timer_init();
-  return 0;
-}
 #endif
 
