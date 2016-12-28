@@ -7,7 +7,7 @@
 #include "map.h"
 #include "error.h"
 
-#define NB_CARACTERISTIQUES 6
+#define NB_CARACTERISTIQUES 5
 
 #ifdef PADAWAN
 
@@ -26,6 +26,7 @@ void map_new (unsigned width, unsigned height)
 
   for (int x = 0; x < 16; x++)
     map_set (x, 16 - 1, 0); // Ground
+    map_set (2, 3, 2); 
 
   for (int y = 0; y < 16 - 1; y++) {
     map_set (0, y, 1); // Wall
@@ -95,6 +96,7 @@ void map_save (char *filename)
 	write(map, &nb_objets, sizeof(int));
         printf("Objets : %d\n", nb_objets);
 	write(map, &tab_carte, taille_carte * sizeof(int));
+        
 
 	//Ecriture pour chaque objet des informations le concernant
 
@@ -103,21 +105,30 @@ void map_save (char *filename)
 	for (int i = 0; i < nb_objets; i++){
 		fprintf(stderr, "Debut objets\n");
 		fprintf(stderr, "%d\n", tableau_objets[i]);
-		char *nom_objet = map_get_name(tableau_objets[i]);
-		
-		tab_cara[0] = strlen(nom_objet);
-		tab_cara[1] = map_get_frames(tableau_objets[i]);
-		tab_cara[2] = map_get_solidity(tableau_objets[i]);
-		tab_cara[3] = map_is_destructible(tableau_objets[i]);
-		tab_cara[4] = map_is_collectible(tableau_objets[i]);
-		tab_cara[5] = map_is_generator(tableau_objets[i]);
+                
+                char *nom_objet = map_get_name(tableau_objets[i]);
+                int taille_nom = strlen(nom_objet);
+                
+                fprintf(stderr, "Nom : %s taille : %d", nom_objet, taille_nom); 
+                
+                write(map, &taille_nom, sizeof(int));
+                write(map, nom_objet, taille_nom * sizeof(char));
+                
+		tab_cara[0] = map_get_frames(tableau_objets[i]);
+		tab_cara[1] = map_get_solidity(tableau_objets[i]);
+		tab_cara[2] = map_is_destructible(tableau_objets[i]);
+		tab_cara[3] = map_is_collectible(tableau_objets[i]);
+		tab_cara[4] = map_is_generator(tableau_objets[i]);
 
 		write(map, &tab_cara, NB_CARACTERISTIQUES * sizeof(int));
 	
 		fprintf(stderr, "fin objets\n");
+                
+            
 
 	}
 	fprintf(stderr, "Done\n" );
+        exit(0);
 	close(map);
 }
 
@@ -174,9 +185,9 @@ void map_load (char *filename){
 		read(map, &generator, sizeof(int));
 
 		fprintf(stderr, "object add %d \n", i);
-		fprintf(stderr, "%s\n", nom_objet);
+		printf("%s\n", nom_objet);
 		map_object_add(nom_objet, nb_sprites, MAP_OBJECT_SOLID);
-		fprintf(stderr, "fin objet add\n");
+		//fprintf(stderr, "fin objet add\n");
 	}
 	map_object_end();
 	fprintf(stderr, "Fin\n");
