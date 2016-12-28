@@ -27,7 +27,19 @@ static unsigned long get_time (void)
 }
 
 #ifdef PADAWAN
+
+void routine(int sig){
+    fprintf (stderr, "sdl_push_event(%p) appelée au temps %ld\n", param_global, get_time ());
+}
+
 void* demon (void* arg){
+    
+    struct sigaction s;
+    s.sa_flags = 0;
+    sigemptyset(&s.sa_mask);
+    s.sa_handler = routine;
+    
+    sigaction(SIGALRM, &s, NULL);
     
     sigset_t mask;
     sigfillset(&mask);
@@ -35,11 +47,12 @@ void* demon (void* arg){
     
     fprintf(stderr, "Thread de pid : %d\n", getpid());
     
-    //Remplacement du mask courant par l'ancien dans le thread pour recevoir SIGALRM
-    
-    sigsuspend(&mask);
-    printf ("sdl_push_event(%p) appelée au temps %ld\n", param_global, get_time ());
-    fprintf(stderr, "Apres sigsuspend");
+    while(1){
+        sigsuspend(&mask);
+        fprintf(stderr, "Apres sigsuspend");
+        sdl_push_event(param_global);
+        fprintf(stderr, "Apres pushevent");
+    }
 }
 
 // timer_init returns 1 if timers are fully implemented, 0 otherwise
