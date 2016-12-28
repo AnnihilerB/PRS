@@ -11,6 +11,8 @@
 
 #include "timer.h"
 
+void *param_global;
+
 // Return number of elapsed µsec since... a long time ago
 static unsigned long get_time (void)
 {
@@ -25,58 +27,57 @@ static unsigned long get_time (void)
 }
 
 #ifdef PADAWAN
-
-void* param_global = NULL; 
-void handler(int s)
-{
-  if (param_global != NULL)
-     printf("sdl_push_event(%p) appelée au temps %ld\n", param_global, get_time());
-  else
-     printf("test: %d\n", (int)pthread_self());
-}
-void *f (void* arg)
-{
-   struct sigaction sg;
-   sg.sa_flags = 0;
-   sg.sa_handler = handler;
-   sigemptyset(&sg.sa_mask);
-   sigaddset(&sg.sa_mask, SIGALRM);
-   
-   sigaction(SIGALRM, &sg, NULL);
-   
-   sigset_t old_mask;
-   
-   sigprocmask(SIG_BLOCK, &sg.sa_mask, &old_mask);
-   
-   sigsuspend(&old_mask);
+void* demon (void* arg){
+    
+    sigset_t mask;
+    sigfillset(&mask);
+    sigdelset(&mask, SIGALRM);
+    
+    fprintf(stderr, "Thread de pid : %d\n", getpid());
+    
+    //Remplacement du mask courant par l'ancien dans le thread pour recevoir SIGALRM
+    
+    sigsuspend(&mask);
+    printf ("sdl_push_event(%p) appelée au temps %ld\n", param_global, get_time ());
+    fprintf(stderr, "Apres sigsuspend");
 }
 
 // timer_init returns 1 if timers are fully implemented, 0 otherwise
 int timer_init (void)
 {
-  pthread_t th;
-  pthread_create(&th, NULL, f, NULL);
-  alarm(1);
-  alarm(1);
-  alarm(1);
-  
-  
-  return 0; // Implementation not ready
+    fprintf(stderr, "Timer init\n");
+    
+    pthread_t th;
+    sigset_t block_mask;
+    
+    sigemptyset(&block_mask);
+    sigaddset(&block_mask, SIGALRM);
+    
+    sigprocmask(SIG_BLOCK, &block_mask, NULL);
+
+    fprintf(stderr, "Create\n");
+    pthread_create(&th, NULL, demon, NULL);
+    return 1; // Implementation not ready
 }
-/*
-jmp_buf buf;
-void handler (int s)
-{
-    siglongjmp(buf, 1);
-}*/
+
 
 void timer_set (Uint32 delay, void *param)
 {
-    struct itimerval ti;
-    //ti.it_interval = NULL; Incompatibel pointer type a voir
-    ti.it_value.tv_usec = delay;
+    
     param_global = param;
-    setitimer(ITIMER_REAL, &ti, NULL);
+    
+    struct itimerval it;
+    
+    struct timeval tv_interval;
+    struct timeval tv_value;
+    
+    tv_value.tv_sec = delay / 1000;
+    
+    it.it_interval = tv_interval;
+    it.it_value = tv_value;
+    
+    setitimer(ITIMER_REAL, &it, NULL); 
+
     
 }
 #endif
