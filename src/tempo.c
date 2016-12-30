@@ -81,6 +81,9 @@ int timer_init (void)
     return 1; // Implementation not ready
 }
 
+/**
+ Pour la gestion de plusieurs objets. Il faudrait regarder du coté de getitimer car elle place dans le buffer la valeur actuelle du timer. A voir donc si on ne pas mettre a jour l'intervalle dans ce buffer pour réarmer le timer avec la valeur du timer restante dans l'ancienne action et rappeller setitmer. La premiere ction se lance, quand on lance la deuxieme on fait un getitimer pour recuperer le temps restant avant la fin de l'execution de la premiere action, on met a jour l'intervalle avec cette valeur et les valeurs de temps deviennent celle de la nouvelle action. On rappelle ensuite setitimer.
+ **/
 
 void timer_set (Uint32 delay, void *param)
 {
