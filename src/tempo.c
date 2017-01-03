@@ -12,17 +12,18 @@
 #include "timer.h"
 
 void *param_global;
-struct file{
+
+struct file {
     struct elem_file *first;
 };
-
-struct file *File;
+struct file File;
 
 struct elem_file{
     
     void *param_event;
     struct itimerval it;
     struct elem_file *next;
+    struct elem_file *pre;
 };
 
 // Return number of elapsed µsec since... a long time ago
@@ -96,8 +97,7 @@ int timer_init (void)
     fprintf(stderr, "Create\n");
     pthread_create(&th, NULL, demon, NULL);
     
-    File = malloc(sizeof(struct file));
-    File->first = NULL;
+    
     return 1; // Implementation not ready
 }
 void triFile()
@@ -144,20 +144,33 @@ void timer_set (Uint32 delay, void *param)
     elem->next = NULL;
     elem->param_event = param;
     elem->it = it;
-    if (File->first == NULL)
-        File->first = elem;
-    else{
-        struct elem_file *e;
-        e = File->first;
-        while (e->next != NULL){
-            e = e->next;
-        }
-        e->next = elem;
-    }
+    ajouter_element_file(elem);
     
     setitimer(ITIMER_REAL, &it, NULL); 
 
     
 }
+
+void ajouter_element_file(elem_file *e)
+{
+    if (File->first == NULL)
+    {
+        File->first = malloc(sizeof(elem_file));
+        File->first = e;
+        File->first->next = File->first->pre = NULL;
+    }
+    else{
+        struct elem_file *el;
+        el = File->first;
+        while (el->next != NULL){
+            el = el->next;
+        }
+        e->pre = el;
+        e->next = NULL;
+        el->next e;
+    }
+    
+}
 #endif
+
 
