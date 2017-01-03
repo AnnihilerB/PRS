@@ -8,11 +8,12 @@
 #include "error.h"
 
 #define NB_CARACTERISTIQUES 5
+#define MAX_OBJETS 10
 
 #ifdef PADAWAN
 
-int verif_tableau(int *tableau, int tailleTableau, int objet){
-	for (int i =0; i < tailleTableau; i++){
+int verif_tableau(int tableau[], int objet){
+	for (int i =0; i < MAX_OBJETS; i++){
 		if ( objet == tableau[i]){
 			return 1;
 		}
@@ -24,10 +25,13 @@ void map_new (unsigned width, unsigned height)
 {
   map_allocate (16, 16);
 
-  for (int x = 0; x < 16; x++)
+  for (int x = 0; x < 16; x++){
     map_set (x, 16 - 1, 0); // Ground
-    map_set (2, 3, 2); 
-
+  }
+    
+    map_set (3, 5, 3);
+    map_set (4, 5, 3);
+  
   for (int y = 0; y < 16 - 1; y++) {
     map_set (0, y, 1); // Wall
     map_set (16 -1, y, 1); // Wall
@@ -58,20 +62,16 @@ void map_save (char *filename)
 	//Récupération de largeur, hauteur et nb objets suivi de leur écriture dans le fichier.
 	int hauteur = (int)map_height();
 	int largeur = (int)map_width();
-	//int nb_objets = (int)map_objects();
 	int nb_objets = 0;
-	fprintf(stderr, "%d\n", nb_objets);
 
 	write(map, &largeur, sizeof(int));
 	write(map, &hauteur, sizeof(int));
 
-	//Création d'un tableau d'objets de taille nb_objets pour stocker les objets différents rencontrés.
-	int *tableau_objets = NULL;
-	int index = 0;
-	tableau_objets = malloc(nb_objets * sizeof(int));
+	//Création d'un tableau d'objets de taille MAX_OBJETS pour stocker les objets différents rencontrés.
+	int tableau_objets[MAX_OBJETS];
 
 	//Initialisation du tableau  à -2 
-	for (int i = 0; i < nb_objets; i++){
+	for (int i = 0; i < MAX_OBJETS; i++){
 		tableau_objets[i] = -2;
 	}
 
@@ -81,18 +81,21 @@ void map_save (char *filename)
 	int tab_carte[taille_carte];
 
         int i = 0;
+        int index = 0;
 	for (int y = 0; y < hauteur; y++){
-		for (int x = 0; x < largeur; x++){
-			tab_carte[i] = map_get (x,y);
-			//Vérification que l'objet courant est nouveau
-			if (tab_carte[i] != -1 && verif_tableau(tableau_objets, nb_objets, tab_carte[i]) == 0){
-				tableau_objets[index] = tab_carte[i];
-				index ++;
-                                nb_objets++;
-			}
-                        i++;
-		}
+            for (int x = 0; x < largeur; x++){
+                tab_carte[i] = map_get (x,y);
+                //Vérification que l'objet courant est nouveau
+                if (tab_carte[i] != -1 && verif_tableau(tableau_objets,tab_carte[i]) == 0){
+                    fprintf(stderr, "Id de %d\n", tab_carte[i]);
+                    tableau_objets[tab_carte[i]] = tab_carte[i];
+                    index ++;
+                    nb_objets++;
+                }
+                i++;
+            }
 	}
+	
 	write(map, &nb_objets, sizeof(int));
         printf("Objets : %d\n", nb_objets);
 	write(map, &tab_carte, taille_carte * sizeof(int));
@@ -102,7 +105,8 @@ void map_save (char *filename)
 
 	int tab_cara[NB_CARACTERISTIQUES];
 
-	for (int i = 0; i < nb_objets; i++){
+	for (int i = 0; i < MAX_OBJETS; i++){
+            if (tableau_objets[i] != -2){
 		fprintf(stderr, "Debut objets\n");
 		fprintf(stderr, "%d\n", tableau_objets[i]);
                 
@@ -123,22 +127,19 @@ void map_save (char *filename)
 		write(map, &tab_cara, NB_CARACTERISTIQUES * sizeof(int));
 	
 		fprintf(stderr, "fin objets\n");
-                
-            
-
+            }
 	}
 	fprintf(stderr, "Done\n" );
-        exit(0);
 	close(map);
 }
 
 void map_load (char *filename){
 
-	int largeur;
-	int hauteur;
-	int nb_objets;
+	int largeur = 0;
+	int hauteur = 0;
+	int nb_objets = 0;
 
-	int objet;
+	int objet = 0;
 
 	int map = open(filename, O_RDONLY);
 
@@ -146,8 +147,7 @@ void map_load (char *filename){
 	read(map, &largeur, sizeof(int));
 	read(map, &hauteur, sizeof(int));
 	read(map, &nb_objets, sizeof(int));
-
-	fprintf(stderr, "largeur %d hauteur %d nb bjets %d\n", largeur, hauteur, nb_objets);
+        
 
 	map_allocate(largeur, hauteur);
 
@@ -155,26 +155,26 @@ void map_load (char *filename){
 	for (int y = 0; y < hauteur; y++){
 		for (int x = 0; x < largeur; x++){
 			read(map, &objet, sizeof(int));
-			map_set(x, y, objet);
-		}
+                        fprintf(stderr, "%d ", objet);
+                        if (objet != -1)
+                            map_set(x, y, objet);
+                        
+                }
+                fprintf(stderr, "\n", objet);
 	}
-	fprintf(stderr, "Fin du placement des objets\n");
 
-	int taille_nom;
-	int nb_sprites;
-	int collectible;
-	int destructible;
-	int generator;
-	int solid;
+	int taille_nom = 0;
+	int nb_sprites = 0;
+	int collectible = 0;
+	int destructible = 0;
+	int generator = 0;
+	int solid = 0;
 
-	fprintf(stderr, "Début begin\n");
 
 	map_object_begin(nb_objets);
 
 	for (int i = 0; i < nb_objets; i++){
-		fprintf(stderr, "Debut for\n");
 		read(map, &taille_nom, sizeof(int));
-		fprintf(stderr, "taille nom %d\n", taille_nom);
 		char nom_objet[taille_nom];
 		
 		read(map, &nom_objet, taille_nom *sizeof(char));
@@ -184,13 +184,16 @@ void map_load (char *filename){
 		read(map, &collectible, sizeof(int));
 		read(map, &generator, sizeof(int));
 
-		fprintf(stderr, "object add %d \n", i);
-		printf("%s\n", nom_objet);
-		map_object_add(nom_objet, nb_sprites, MAP_OBJECT_SOLID);
+                fprintf(stderr,"Nom : %s\n", nom_objet);
+                //map_object_add (nom_objet, 1, MAP_OBJECT_SOLID);
+                
 		//fprintf(stderr, "fin objet add\n");
 	}
-	map_object_end();
-	fprintf(stderr, "Fin\n");
+	fprintf(stderr, "hors for\n");
+        map_object_add ("images/ground.png", 1, MAP_OBJECT_SOLID);
+        map_object_add ("images/wall.png", 1, MAP_OBJECT_SOLID);
+        map_object_add ("images/marble.png", 1, MAP_OBJECT_SOLID | MAP_OBJECT_DESTRUCTIBLE);
+	
+        map_object_end();
 }
-
 #endif
