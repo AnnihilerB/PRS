@@ -122,6 +122,7 @@ int setObjects(char **argv, int n, int fichierMap)
 	int hauteurMap = getHeight(fichierMap);
 	int largeurMap = getWidth(fichierMap);
 	int saveMap[hauteurMap][largeurMap];
+	lseek(fichierMap, 3*sizeof(int), SEEK_SET);
 	for (int i = 0; i < hauteurMap; i++)     //on sauvegarde la matrice
 	      read(fichierMap, &saveMap[i], largeurMap*sizeof(int));
 	
