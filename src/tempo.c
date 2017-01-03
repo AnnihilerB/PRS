@@ -12,6 +12,18 @@
 #include "timer.h"
 
 void *param_global;
+struct file{
+    struct elem_file *first;
+};
+
+struct file *File;
+
+struct elem_file{
+    
+    void *param_event;
+    struct itimerval it;
+    struct elem_file *next;
+};
 
 // Return number of elapsed µsec since... a long time ago
 static unsigned long get_time (void)
@@ -55,10 +67,15 @@ void* demon (void* arg){
     while(1){
         //Attente de SIGALRM
         sigsuspend(&mask);
-        fprintf(stderr, "Apres sigsuspend");
+        fprintf(stderr, "Apres sigsuspend\n");
         //traitement de l'event
-        sdl_push_event(param_global);
-        fprintf(stderr, "Apres pushevent");
+        
+        sdl_push_event(File->first);
+        
+        fprintf(stderr, "Apres pushevent\n");
+        
+        
+        
     }
 }
 
@@ -78,9 +95,27 @@ int timer_init (void)
 
     fprintf(stderr, "Create\n");
     pthread_create(&th, NULL, demon, NULL);
+    
+    File = malloc(sizeof(struct file));
+    File->first = NULL;
     return 1; // Implementation not ready
 }
-
+void triFile()
+{
+    struct itimerval it;
+    getitimer(ITIMER_REAL, &it);
+    long delai_restant_premier_elem = it.it_value.tv_sec*1000 + it.it_value.tv_usec/1000;
+    struct elem_file *e = File->first;
+    while (e->next != NULL)
+    {
+        long temps = e->next->it->tv_usec/1000 + e->next->it->tv_sec*1000;   
+        if (delai_restant_premier_elem < temps - delai_restant_premier_elem)
+        {
+            
+        }
+        e = e->next;
+    }
+}
 void timer_set (Uint32 delay, void *param)
 {
     
@@ -89,6 +124,8 @@ void timer_set (Uint32 delay, void *param)
     long int micro = (delay % 1000) * 1000;
     
     fprintf(stderr, "Delay : %d, sec : %ld, micro : %ld\n", delay, sec, micro);
+    
+    
     param_global = param;
     
     struct itimerval it;
@@ -96,12 +133,27 @@ void timer_set (Uint32 delay, void *param)
     struct timeval tv_interval;
     struct timeval tv_value;
     
-    // les deux valeurs sont importantes. pour 2,2 secondes, sec = 2 (en secondes) et micro = 200000 (0,2s converties en micro secondes) 
+     // les deux valeurs sont importantes. pour 2,2 secondes, sec = 2 (en secondes) et micro = 200000 (0,2s converties en micro secondes) 
     tv_value.tv_sec = sec;
     tv_value.tv_usec = micro;
     
     it.it_interval = tv_interval;
     it.it_value = tv_value;
+    
+    struct elem_file *elem = malloc(sizeof(struct elem_file));
+    elem->next = NULL;
+    elem->param_event = param;
+    elem->it = it;
+    if (File->first == NULL)
+        File->first = elem;
+    else{
+        struct elem_file *e;
+        e = File->first;
+        while (e->next != NULL){
+            e = e->next;
+        }
+        e->next = elem;
+    }
     
     setitimer(ITIMER_REAL, &it, NULL); 
 
