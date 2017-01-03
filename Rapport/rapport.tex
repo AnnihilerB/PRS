@@ -1,0 +1,46 @@
+\documentclass[10pt,a4paper]{article}
+\usepackage[utf8]{inputenc}
+\usepackage{color}
+\usepackage[francais]{babel}
+\usepackage{listings}
+\usepackage[T1]{fontenc}
+\usepackage{graphicx}
+\usepackage[export]{adjustbox}
+\bibliographystyle{ieeetr}
+\author{GAILLARD Valentin FONTENAY Clément CHERIFI Ali}
+\title{Rapport de projet\\Programmation système}
+\begin{document}
+\maketitle
+\newpage
+\tableofcontents
+\newpage
+
+\section{Sauvegarde et chargement des cartes}
+La principale source de réflexion ici a été de trouver une convention de stockage afin de stocker la carte avec toutes ses propriétés afin de nous simplifier au maximum les phases de d'écriture et de lecture.
+Nous avons donc choisi de procéder comme suivant : 
+\begin{itemize}
+\item Hauteur de la carte
+\item Largeur de la carte
+\item Nombre d'objets
+\item Matrice de la carte (identifiant de l'objet)
+\end{itemize}
+Puis pour chaque objet : 
+\begin{itemize}
+\item Taille de la chaine de caractère du nom de l'objet 
+\item Nom de l'objet 
+\item Caractéritiques de l'objet.
+\end{itemize}
+\subsection{Sauvegarde}
+
+	Concernant la sauvegarde, elle fonctionne partiellement. La sauvegarde en elle même ne pose aucun problème. Cependant, ils nous a été impossible de sauvegarder tous les objets de la carte en incluant ceux qui ne sont pas présents physiquement sur la carte. Elle ne concerne donc que les objets ayant une présence physique sur la carte.
+	Elle fonctionne de la manière suivante. En premier lieu des appels aux fonctions permettant de récupérer largeur et hauteurs sont effectués. Ces deux valeurs sont inscrites directement dans le fichier via la fonction \textit{write()}. Un tableau d'objets est ensuite crée afin de répertorier tous les objets différents. Il nous permettra via son parcours d'écrire les caractéritiques des objets. Une double boucle \textit{for} parcours ensuite toute la carte. Chaque objet est récupéré via la fonction \textit{map\_get(x,y)} et est stocké dans le tableau \textit{tab\_carte}. Ce tableau est de taille \textit{largeur * hauteur} et va contenir toute la matrice. Avoir un tableau de cette taille nous permet de n'avoir recours qu'à un seul appel à la fonction \textit{write()} Pour chaque objet, on regarde alors si il est nouveau. Si oui, il est ajouté au tableau des objets et le nombre d'objets est alors incrémenté.
+	A la fin de ce parcours le nombre d'objets ainsi que le tableau \textit{tab\_carte} sont écrits dans le fichier de sauvegarde.
+	
+	Par la suite, un tableau de caractétiques est créé. De manière analogue au tableau de la carte, ce tableau nous permet de n'effectuer qu'un seul write par objet. Un boucle ayant pour longueur le nombre d'objets parcours le tableau d'objets. On récupère d'abord le nom de l'objet via la méthode \textit{map\_get\_name()} ensuite est calculé la longueur de ce nom via la fonction \textit{strlen()}. Une fois ceci fait, chaque case du tableau de caractéristiques sera rempli avec une caractéristique via les appels de fonctions correspondant. En fin de boucle sont écrits la taille du nom, le nom de l'objet et le tableau de caractéristiques.
+	
+\subsection{Chargement}
+
+
+
+
+\end{document}
