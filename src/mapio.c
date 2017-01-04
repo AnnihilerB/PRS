@@ -4,6 +4,8 @@
 #include <stdlib.h>
 #include <string.h>
 
+#include <errno.h>
+
 #include "map.h"
 #include "error.h"
 
@@ -12,14 +14,23 @@
 
 #ifdef PADAWAN
 
-int verif_tableau(int tableau[], int objet){
-	for (int i =0; i < MAX_OBJETS; i++){
-		if ( objet == tableau[i]){
-			return 1;
-		}
-	}
-	return 0;
+
+
+int generer_flags(int solid, int collectible, int destructible, int generator){
+    int flags = 0;
+    
+    flags |= solid;
+    
+    if (collectible)
+        flags |= MAP_OBJECT_COLLECTIBLE;
+    if (destructible)
+        flags |= MAP_OBJECT_DESTRUCTIBLE;
+    if (generator)
+        flags |= MAP_OBJECT_GENERATOR;
+    
+    return flags;
 }
+    
 
 void map_new (unsigned width, unsigned height)
 {
@@ -53,10 +64,17 @@ void map_new (unsigned width, unsigned height)
 
 void map_save (char *filename)
 {
+        errno = 0;
     
         filename = "saved.map";
 
 	int map = open(filename, O_WRONLY | O_CREAT, 0666);
+        
+        if (map == -1){
+            fprintf(stderr, "Error creating the save file. %s", strerror(errno));
+            exit(errno);
+        }
+            
 
 	//Récupération de largeur, hauteur et nb objets suivi de leur écriture dans le fichier.
 	int hauteur = (int)map_height();
@@ -66,10 +84,8 @@ void map_save (char *filename)
 	write(map, &largeur, sizeof(int));
 	write(map, &hauteur, sizeof(int));
         write(map, &nb_objets, sizeof(int));
-        printf("Objets : %d\n", nb_objets);
 
 	//Parcours de l'ensemble de la carte et récupération des objets aux coordonées
-
 	int taille_carte = largeur * hauteur;
 	int tab_carte[taille_carte];
 
@@ -77,28 +93,17 @@ void map_save (char *filename)
 	for (int y = 0; y < hauteur; y++){
             for (int x = 0; x < largeur; x++){
                 tab_carte[i] = map_get (x,y);
-                fprintf(stderr, "%d ", tab_carte[i]);
                 i++;
             }
-            fprintf(stderr, "\n");
         }
-	
 	write(map, &tab_carte, taille_carte * sizeof(int));
         
 
 	//Ecriture pour chaque objet des informations le concernant
-
 	int tab_cara[NB_CARACTERISTIQUES];
-
 	for (int i = 0; i < nb_objets; i++){
-            fprintf(stderr, "Debut objets\n");
-            fprintf(stderr, "ID : %d\n", i);
-                
             char *nom_objet = map_get_name(i);
-            fprintf(stdout, "Retour Prof : %s\n", map_get_name(i));
             int taille_nom = strlen(nom_objet);
-                
-            fprintf(stderr, "Nom : %s taille : %d", nom_objet, taille_nom); 
                 
             write(map, &taille_nom, sizeof(int));
             write(map, nom_objet, taille_nom * sizeof(char));
@@ -110,16 +115,16 @@ void map_save (char *filename)
             tab_cara[4] = map_is_generator(i);
 
             write(map, &tab_cara, NB_CARACTERISTIQUES * sizeof(int));
-	
-            fprintf(stderr, "fin objets\n");
         }
-        fprintf(stderr, "Done\n" );
 	close(map);
+        fprintf(stdout, "Game saved successfully !\n");
 }
 	
 
 
 void map_load (char *filename){
+    
+        errno = 0;
 
 	int largeur = 0;
 	int hauteur = 0;
@@ -128,26 +133,26 @@ void map_load (char *filename){
 	int objet = 0;
 
 	int map = open(filename, O_RDONLY);
+        
+        if (map == -1){
+            fprintf(stderr, "Error creating the save file. %s", strerror(errno));
+            exit(errno);
+        }
 
 	//Lecture des informations de base : largeur, hauteur et nb_objets
 	read(map, &largeur, sizeof(int));
 	read(map, &hauteur, sizeof(int));
 	read(map, &nb_objets, sizeof(int));
         
-
 	map_allocate(largeur, hauteur);
 
 	//Parcours de la matrice et placement des objets sur la carte
 	for (int y = 0; y < hauteur; y++){
 		for (int x = 0; x < largeur; x++){
 			read(map, &objet, sizeof(int));
-                        //fprintf(stderr, "%d ", objet);
                         if (objet != -1)
                             map_set(x, y, objet);
-                        //fprintf(stderr, "ID objet dans map set : %d\n", objet);
-                        
                 }
-                //fprintf(stderr, "\n", objet);
 	}
 
 	int taille_nom = 0;
@@ -158,33 +163,29 @@ void map_load (char *filename){
 	int solid = 0;
 
 	map_object_begin(nb_objets);
-        fprintf(stderr, "Begin nb objets : %d\n ", nb_objets);
 
 	for (int i = 0; i < nb_objets; i++){
 		read(map, &taille_nom, sizeof(int));
-		char nom_objet[taille_nom];
-                char c;
+		
+                char nom_objet[taille_nom];
+                char caractere_nom;
                 
-		//read(map, nom_objet,taille_nom* sizeof(char));
+                //Récupération du nom de l'objet caractère par caractère.
                 for (int i = 0; i< taille_nom; i++){
-                  read(map, &c, sizeof(char));
-                  nom_objet[i] = c;
+                  read(map, &caractere_nom, sizeof(char));
+                  nom_objet[i] = caractere_nom;
                 }
+                //Lecture des caractéritiques dans le fichier
 		read(map, &nb_sprites, sizeof(int));
 		read(map, &solid, sizeof(int));
 		read(map, &destructible, sizeof(int));
 		read(map, &collectible, sizeof(int));
 		read(map, &generator, sizeof(int));
-
-               // fprintf(stderr,"Nom : %s\n", nom_objet);
-               //fprintf(stdout,"Nom : %s Taille : %d\n", nom_objet, taille_nom);
-              // fprintf(stdout,"Nom : %s Taille : %d\n", nom_objet, taille_nom);
-               map_object_add (nom_objet, 1, MAP_OBJECT_SOLID);
                 
-		fprintf(stderr, "fin objet add\n");
+                int flags = generer_flags(solid, collectible, destructible, generator);
+
+                map_object_add (nom_objet, nb_sprites, flags);
 	}
-  
-	fprintf(stderr, "hors for\n");
         map_object_end();
 }
 #endif
