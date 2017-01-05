@@ -27,9 +27,10 @@ void printHeight(int fichierMap);
 void printObjects(int fichierMap);
 int supprimerListeObjets (int fichierMap);
 int verificationArgumentsSetObjects (char *argv[], int n, int fichierMap);
-int setObjects(char **argv, int n, int fichierMap);
 void setWidthHeight(int longueur, char type, int fichierMap);
+int setObjects(char **argv, int nombre_args, int fichierMap);
 void pruneObjects(int fichierMap);
+
 
 enum ErrArgsSetObjects {ERRNOM, ERRTAILLE};
 char* caracteristiques[] = {"solid", "semi-solid", "air", "collectible", "destructible", "generator",  "not-destructible", "not-collectible", "not-generator"};
@@ -103,7 +104,7 @@ int main (int argc, char** argv)
 	}
 	return 0;
 }
-int verificationArgumentsSetObjects (char *argv[], int n, int fichierMap) //verifie
+int verificationArgumentsSetObjects (char *argv[], int n, int fichierMap)
 {
 	if (n % 6 != 0 || n / 6 < getObjects(fichierMap))
 		return ERRTAILLE;
@@ -112,71 +113,78 @@ int verificationArgumentsSetObjects (char *argv[], int n, int fichierMap) //veri
 		return ERRNOM;
 	for (int i = 2; i < n; i++)	//on commence à 2 car le premier est le chemin de l'image et un chiffre
 	{
-		int p = 0;
-		if (i % 6 == 0)		//si c'est un chemin d'image
+		//Si c'est une image
+		if (i % 6 == 0)
 		{
 			i++;
 			if (atoi(argv[i]) == 0)
 				return ERRNOM;
-			i ++; 
+			i++;
 		}
-			
-		while (p < NB_CARACTERISTIQUES)
+		//Vérification que les caractéristiques sont correctes.
+		int index_cara = 0;
+		while (index_cara < NB_CARACTERISTIQUES)
 		{
-			if (strcmp(argv[i], caracteristiques[p]) == 0)
+			if (strcmp(argv[i], caracteristiques[index_cara]) == 0)
 				break;
-			p ++;
+			index_cara++;
 		}
-		if (p == NB_CARACTERISTIQUES)		//donc si l'argument n'est pas reconnu
+		//Si argument non reconnu
+		if (index_cara == NB_CARACTERISTIQUES)
 			return ERRNOM;
 	}
 }
-int setObjects(char **argv, int n, int fichierMap)
+int setObjects(char **argv, int nombre_args, int fichierMap)
 {
 	int hauteurMap = getHeight(fichierMap);
 	int largeurMap = getWidth(fichierMap);
 	int saveMap[hauteurMap][largeurMap];
 	lseek(fichierMap, 3*sizeof(int), SEEK_SET);
-	for (int i = 0; i < hauteurMap; i++)     //on sauvegarde la matrice
+	//Sauvegarde de la matrice
+	for (int i = 0; i < hauteurMap; i++)     
 	      read(fichierMap, &saveMap[i], largeurMap*sizeof(int));
 	
-	ftruncate(fichierMap, 2*sizeof(int));		//on supprime tout sauf la largeur et la hauteur
+	//Suppression de tout sauf largeur et hauteur
+	ftruncate(fichierMap, 2*sizeof(int));		
 	printf("%s\n", strerror(errno));
 	lseek(fichierMap, 0, SEEK_END);
 	
-	int tmp = n/6;
+	int tmp = nombre_args/6;
 	write(fichierMap, &tmp, sizeof(int));//on écrit la nouvelle valeur du nombre d'objet
 	for (int i = 0; i < hauteurMap; i++)		//on récrit la matrice
 	      write(fichierMap, &saveMap[i], largeurMap*sizeof(int));
 	
-	//puis on écrit la nouvelle liste
-	for (int i = 0; i < n; i++)
+	//Ecriture de la nouvelle liste
+	for (int i = 0; i < nombre_args; i++)
 	{
+		//Ecriture du nom des fichiers d'images
 	      if (i % 6 == 0)
 		      write(fichierMap, argv[i], strlen(argv[i]));
+	      //Ecriture des caractéristiques.
 	      else
 	      {
-		      int p = 0;
-		      while (p < NB_CARACTERISTIQUES)
+		      int index_cara = 0;
+		      while (index_cara < NB_CARACTERISTIQUES)
 		      {
-			      if (strcmp(argv[i], caracteristiques[p]) == 0)
+			      if (strcmp(argv[i], caracteristiques[index_cara]) == 0)
 			      {
-				      if (p >= 0 && p < 3)	//solid, air, semi-solid
-					      write(fichierMap, &p, sizeof(int));
+			    	  //Solidité de l'objet
+				      if (index_cara >= 0 && index_cara < 3)
+					      write(fichierMap, &index_cara, sizeof(int));
 				      else
 				      {
-					      int r;
-					      if (p == 3)
-						r = MAP_OBJECT_COLLECTIBLE;
-					      else if (p == 4)
-						r = MAP_OBJECT_DESTRUCTIBLE;
+					      int flags;
+					      if (index_cara == 3)
+						flags = MAP_OBJECT_COLLECTIBLE;
+					      else if (index_cara == 4)
+						flags = MAP_OBJECT_DESTRUCTIBLE;
 					      else
-						r = MAP_OBJECT_GENERATOR;
-					      write(fichierMap, &r, sizeof(int));
+						flags = MAP_OBJECT_GENERATOR;
+					      write(fichierMap, &flags, sizeof(int));
 				      }
 				      break;
 			      }
-			      p ++;
+			      index_cara ++;
 		      }
 	      }
 	}

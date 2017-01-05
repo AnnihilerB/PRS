@@ -18,9 +18,10 @@
 
 int generer_flags(int solid, int collectible, int destructible, int generator){
     int flags = 0;
-    
+    //Ajout dans tous les case de la solidité
     flags |= solid;
     
+    //Ajout des flags à 1 uniquement.
     if (collectible)
         flags |= MAP_OBJECT_COLLECTIBLE;
     if (destructible)
@@ -64,18 +65,17 @@ void map_new (unsigned width, unsigned height)
 
 void map_save (char *filename)
 {
+        //Numéro d'erreur.
         errno = 0;
     
+        //Ouverture du fichier.
         filename = "saved.map";
-
 	int map = open(filename, O_WRONLY | O_CREAT, 0666);
-        
         if (map == -1){
             fprintf(stderr, "Error creating the save file. %s", strerror(errno));
             exit(errno);
         }
             
-
 	//Récupération de largeur, hauteur et nb objets suivi de leur écriture dans le fichier.
 	int hauteur = (int)map_height();
 	int largeur = (int)map_width();
@@ -89,11 +89,11 @@ void map_save (char *filename)
 	int taille_carte = largeur * hauteur;
 	int tab_carte[taille_carte];
 
-        int i = 0;
+        int index = 0;
 	for (int y = 0; y < hauteur; y++){
             for (int x = 0; x < largeur; x++){
-                tab_carte[i] = map_get (x,y);
-                i++;
+                tab_carte[index] = map_get (x,y);
+                index++;
             }
         }
 	write(map, &tab_carte, taille_carte * sizeof(int));
@@ -102,6 +102,7 @@ void map_save (char *filename)
 	//Ecriture pour chaque objet des informations le concernant
 	int tab_cara[NB_CARACTERISTIQUES];
 	for (int i = 0; i < nb_objets; i++){
+            //Récupération de la taille du nom et du nom de l'objet.
             char *nom_objet = map_get_name(i);
             int taille_nom = strlen(nom_objet);
                 
@@ -124,6 +125,7 @@ void map_save (char *filename)
 
 void map_load (char *filename){
     
+        //Numéro d'erreur
         errno = 0;
 
 	int largeur = 0;
@@ -132,8 +134,8 @@ void map_load (char *filename){
 
 	int objet = 0;
 
+        //Ouverture du fichier
 	int map = open(filename, O_RDONLY);
-        
         if (map == -1){
             fprintf(stderr, "Error creating the save file. %s", strerror(errno));
             exit(errno);
@@ -163,7 +165,8 @@ void map_load (char *filename){
 	int solid = 0;
 
 	map_object_begin(nb_objets);
-
+        
+        //récupération dans le fichier de chaque objet.
 	for (int i = 0; i < nb_objets; i++){
 		read(map, &taille_nom, sizeof(int));
 		
@@ -182,6 +185,7 @@ void map_load (char *filename){
 		read(map, &collectible, sizeof(int));
 		read(map, &generator, sizeof(int));
                 
+                //récupération des flags uniquement à 1
                 int flags = generer_flags(solid, collectible, destructible, generator);
 
                 map_object_add (nom_objet, nb_sprites, flags);

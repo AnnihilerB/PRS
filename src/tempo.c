@@ -12,23 +12,23 @@
 
 #include "timer.h"
 
-bool sup_elem_file;
 pthread_mutex_t mux;
 
 struct file {
-    struct elem_file *first;
+    struct elem_file *premier;
 };
-struct file *File;
 
 struct elem_file{
     
     void *param_event;
     struct itimerval it;
-    struct elem_file *next;
+    struct elem_file *suivant;
     struct elem_file *pre;
     unsigned long temps;
 };
 
+
+struct file *File;
 // Return number of elapsed µsec since... a long time ago
 static unsigned long get_time (void)
 {
@@ -46,7 +46,7 @@ static unsigned long get_time (void)
 
 // Routine de traitement
 void routine(int sig){
-   // fprintf (stderr, "sdl_push_event(%p) appelée au temps %ld\n", File->first->param_event, get_time ());
+   // fprintf (stderr, "sdl_push_event(%p) appelée au temps %ld\n", File->premier->param_event, get_time ());
 }
 
 void* demon (void* arg){
@@ -72,16 +72,14 @@ void* demon (void* arg){
     while(1){
         //Attente de SIGALRM
         sigsuspend(&mask);
-
         
         //traitement de l'event
-        sdl_push_event(File->first->param_event);
+        sdl_push_event(File->premier->param_event);
         pthread_mutex_lock(&mux);
         supprimer_premier_element_file();
-        pthread_mutex_unlock(&mux);
-        setitimer(ITIMER_REAL, &File->first->it, NULL);
         triFile();
-        
+        pthread_mutex_unlock(&mux);
+        setitimer(ITIMER_REAL, &File->premier->it, NULL);
     }
 }
 
@@ -89,64 +87,63 @@ void* demon (void* arg){
 int timer_init (void)
 {
     pthread_mutex_init(&mux, NULL);
-    fprintf(stderr, "Timer init\n");
-    
+
     //Creation d'un masque pour bloquer la transmission du SIGALRM dans le processus
-    pthread_t th;
+    pthread_t thread;
     sigset_t block_mask;
     
     sigemptyset(&block_mask);
     sigaddset(&block_mask, SIGALRM);
-    
+    //Blocage du signal SIGALRM
     sigprocmask(SIG_BLOCK, &block_mask, NULL);
 
-    pthread_create(&th, NULL, demon, NULL);
-    
+    pthread_create(&thread, NULL, demon, NULL);
+    //Allocation de la Strucure de données
     File = malloc(sizeof(struct file));
-    File->first = NULL;
-    
-    sup_elem_file = false;
-    
+    File->premier = NULL;
     return 1; // Implementation not ready
 }
+
 void triFile()
 {
-    
     struct itimerval it;
-    
+    getitimer(ITIMER_REAL, &it);
+    //Calcul du delai restant
     long delai_restant_premier_elem = it.it_value.tv_sec*1000 + it.it_value.tv_usec/1000;
     
     struct elem_file *e;
-    if (File->first != NULL && File->first->next != NULL)
+    if (File->premier != NULL && File->premier->suivant != NULL)
     {
-        e = File->first->next;
-        while (e->next != NULL)
+        e = File->premier->suivant;
+        while (e->suivant != NULL)
         {
-            long temps = e->next->it.it_value.tv_usec/1000 + e->next->it.it_value.tv_sec*1000;   
+            //Récupération du temps de l'élément suivant
+            long temps = e->suivant->it.it_value.tv_usec/1000 + e->suivant->it.it_value.tv_sec*1000;   
             
+            //Tri de la file via décalage du premier élément.
             if (delai_restant_premier_elem < temps - delai_restant_premier_elem)
             {
                 printf("Dans if tri\n");
-                if (e == File->first->next)
+                if (e == File->premier->suivant)
                 {
                     printf("premier\n");
-                    e->next->pre = File->first->next;
-                    File->first->pre = e;
-                    File->first->next = e->next;
-                    File->first = e;
-                    File->first->pre = NULL;
+                    e->suivant->pre = File->premier->suivant;
+                    File->premier->pre = e;
+                    File->premier->suivant = e->suivant;
+                    File->premier = e;
+                    File->premier->pre = NULL;
                 }
                 else
                 {
                     printf("deuxieme\n");
-                    e->next->pre = e->pre;
-                    e->pre->next = e->next;
-                    e->pre = e->next;
-                    e->next = e->next->next;
-                    e->pre->next = e;
+                    e->suivant->pre = e->pre;
+                    e->pre->suivant = e->suivant;
+                    e->pre = e->suivant;
+                    e->suivant = e->suivant->suivant;
+                    e->pre->suivant = e;
                 }
             }
-            e = e->next;
+            e = e->suivant;
         }
     }
 }
@@ -168,63 +165,65 @@ void timer_set (Uint32 delay, void *param)
     it.it_interval = tv_interval;
     it.it_value = tv_value;
     
-    
-        struct elem_file *elem = malloc(sizeof(struct elem_file));
-        elem->next = elem->pre = NULL;
-        elem->param_event = param;
-        elem->it = it;
-        elem->temps = get_time();
-        pthread_mutex_lock(&mux);
-        ajouter_element_file(elem);
-        pthread_mutex_unlock(&mux);
-        sup_elem_file = false;
-        elem->temps = get_time();
-        setitimer(ITIMER_REAL, &File->first->it, NULL);
-        triFile();
-        afficherFile();
+    // Allocation de la Strucure et affectation des paramètres.
+    struct elem_file *elem = malloc(sizeof(struct elem_file));
         
+    elem->suivant = elem->pre = NULL;
+    elem->param_event = param;
+    elem->it = it;
+    elem->temps = get_time();
         
+    pthread_mutex_lock(&mux);
+    ajouter_element_file(elem);
+    pthread_mutex_unlock(&mux);
+        
+    setitimer(ITIMER_REAL, &File->premier->it, NULL);
+        
+    triFile();
+        
+
 }
 
 void ajouter_element_file(struct elem_file *e)
 {
-    printf("Ajout\n");
-    if (File->first == NULL)
+    //Ajout de l'élément en premier si la file ne contient pas d'élément.
+    if (File->premier == NULL)
     {
-        printf("if\n");
-        File->first = e;
-        File->first->next = File->first->pre = NULL;
+        File->premier = e;
+        File->premier->suivant = File->premier->pre = NULL;
     }
+    //Ajout de l'élément à la suite des autres.
     else{
-        printf("else\n");
         struct elem_file *el;
-        el = File->first;
-        while (el->next != NULL){
-            printf("while\n");
-            el = el->next;
+        el = File->premier;
+        while (el->suivant != NULL){
+            el = el->suivant;
         }
         e->pre = el;
-        e->next = NULL;
-        el->next = e;
+        e->suivant = NULL;
+        el->suivant = e;
     }
     
 }
+
 void supprimer_premier_element_file()
 {
-    if (File->first != NULL)
+    //Déréférencement et free du premier élément. 
+    if (File->premier != NULL)
     {
-         File->first->pre = NULL;
-         File->first = File->first->next;
-         //afficherFile();
+        struct elem_file *e = File->premier;
+        File->premier = File->premier->suivant;
+        free(e->pre);
     }
 }
+
 void afficherFile()
 {
     struct elem_file *e;
-    e = File->first;
+    e = File->premier;
     do{
         printf("%p: temps %d et %d adresse --> ", e, e->it.it_value.tv_sec, e->it.it_value.tv_usec);
-        e = e->next;
+        e = e->suivant;
     }while(e != NULL);
     printf("\n");
 }
