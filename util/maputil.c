@@ -28,8 +28,7 @@ void printObjects(int fichierMap);
 int supprimerListeObjets (int fichierMap);
 int verificationArgumentsSetObjects (char *argv[], int n, int fichierMap);
 int setObjects(char **argv, int n, int fichierMap);
-void setWidth(int w, int fichierMap);
-void setHeight(int h, int fichierMap);
+void setWidthHeight(int longueur, char type, int fichierMap);
 void pruneObjects(int fichierMap);
 
 enum ErrArgsSetObjects {ERRNOM, ERRTAILLE};
@@ -81,10 +80,10 @@ int main (int argc, char** argv)
 				}
 			}
 			
-			else if (strcmp(argv[2], "--setwidth") ==  0)			  
-			  setWidth(atoi(argv[3]), fichierMap);			
+			else if (strcmp(argv[2], "--setwidth") ==  0) 
+			  setWidthHeight(atoi(argv[3]), 'w', fichierMap);			
 			else if (strcmp(argv[2], "--setheight") ==  0)
-			  setHeight(atoi(argv[3]), fichierMap);	       					
+			  setWidthHeight(atoi(argv[3]), 'h', fichierMap);	       					
 			else if (strcmp(argv[2], "--pruneobjects") ==  0)
 			  pruneObjects(fichierMap);
 		
@@ -242,15 +241,15 @@ void printObjects(int fichierMap)
 		printf("%d\n", nb);
 }
 
-void setWidth(int w, int fichierMap){
+void setWidthHeight(int longueur, char type, int fichierMap){
   
-        int hauteurMap = getHeight(fichierMap);//sauvegarde de tous les paramètres
+        int hauteurMap = getHeight(fichierMap); //on sauvegarde tous les paramètres du fichier map dans des variables.
 	int largeurMap = getWidth(fichierMap);
 	int nb_objects = getObjects(fichierMap);
 	
 	int saveMap[hauteurMap][largeurMap];
 	lseek(fichierMap, 3*sizeof(int),SEEK_SET);
-	for (int i = 0; i < hauteurMap; i++){   
+	for (int i = 0; i < hauteurMap; i++){   //sauvegarde de la matrice.
 	  read(fichierMap, &saveMap[i], largeurMap*sizeof(int));
 	}
 	
@@ -259,7 +258,7 @@ void setWidth(int w, int fichierMap){
 	int nb_caract=5;
 	int caract[nb_objects][nb_caract];
 	
-	for(int i = 0; i<nb_objects; i++){
+	for(int i = 0; i<nb_objects; i++){ //sauvegarde de la taille de la chaine de caractère, du nom de l'objet et de ses caractéristiques.
 	  read(fichierMap,&taillechaine[i],sizeof(int));
 	  chaine[i]=malloc(taillechaine[i]*sizeof(char));
 	  for(int j=0; j<taillechaine[i]; j++){ 
@@ -269,36 +268,47 @@ void setWidth(int w, int fichierMap){
 	    read(fichierMap, &caract[i][k], sizeof(int));
 	  }
 	}
-	
-	int nouvellelargeur = w;
-	int newMap[hauteurMap][nouvellelargeur];//création nouvelle matrice
-        memset(newMap, MAP_OBJECT_NONE, sizeof(newMap[hauteurMap][nouvellelargeur])*hauteurMap*nouvellelargeur);
 
-	int minilargeur;
-	if(nouvellelargeur<largeurMap)
-	  minilargeur=nouvellelargeur;
+	int old_largeur=largeurMap;
+	int old_hauteur=hauteurMap;
+	
+	if(type=='w')
+	  largeurMap = longueur;
 	else
-	  minilargeur=largeurMap;
-	    
+	  hauteurMap = longueur;	
+	
+	int newMap[hauteurMap][largeurMap]; //création nouvelle matrice avec la nouvelle valeur de largeur ou de hauteur.
+	memset(newMap, MAP_OBJECT_NONE, sizeof(newMap[hauteurMap][largeurMap])*hauteurMap*largeurMap);
+
+	if(largeurMap>old_largeur)
+	  largeurMap=old_largeur;
+	if(hauteurMap>old_hauteur)
+	  hauteurMap=old_hauteur;
+	
 	for(int i=0; i<hauteurMap; i++){
-	  for(int j=0; j<minilargeur; j++){
-	    newMap[i][j]=saveMap[i][j];//remplissage de la matrice avec les objets de l'ancienne
+	  for(int j=0; j<largeurMap; j++){
+	    newMap[i][j]=saveMap[i][j]; //remplit de la matrice avec les éléments de l'ancienne.
 	  }
 	}
+
+	if(type=='w')
+	  largeurMap = longueur;
+	else
+	  hauteurMap = longueur;
 	
-	ftruncate(fichierMap, 0); //on efface le fichier entier
-	lseek(fichierMap, 0, SEEK_SET);
-	write(fichierMap, &nouvellelargeur, sizeof(int));//on réécrit tout
-	write(fichierMap, &hauteurMap, sizeof(int));
-	write(fichierMap, &nb_objects, sizeof(int));
+	ftruncate(fichierMap, 0); //on efface le fichier entier.
+        lseek(fichierMap, 0, SEEK_SET); //on se positionne au début du fichier.
+        write(fichierMap, &largeurMap, sizeof(int)); //on réécrit tout.
+        write(fichierMap, &hauteurMap, sizeof(int));
+        write(fichierMap, &nb_objects, sizeof(int));
 	
-	for(int i=0; i<hauteurMap; i++){
-	  for(int j=0; j<nouvellelargeur; j++){
+	for(int i=0; i<hauteurMap; i++){ //réécriture de la nouvelle matrice.
+	  for(int j=0; j<largeurMap; j++){
 	    write(fichierMap, &newMap[i][j], sizeof(int));
 	  }
 	}
 	
-	for(int i=0; i<nb_objects; i++){
+	for(int i=0; i<nb_objects; i++){ 
 	  write(fichierMap, &taillechaine[i], sizeof(int));
 	  for(int j=0; j<taillechaine[i]; j++){
 	    write(fichierMap, &chaine[i][j], sizeof(char));
@@ -308,74 +318,9 @@ void setWidth(int w, int fichierMap){
 	  }
         }
 	
-}
-
-void setHeight(int h, int fichierMap){
-  
-        int hauteurMap = getHeight(fichierMap);
-	int largeurMap = getWidth(fichierMap);
-	int nb_objects = getObjects(fichierMap);
-	
-	int saveMap[hauteurMap][largeurMap];
-	lseek(fichierMap, 3*sizeof(int),SEEK_SET);
-	for (int i = 0; i < hauteurMap; i++){   
-	  read(fichierMap, &saveMap[i], largeurMap*sizeof(int));
+	for(int i=0; i<nb_objects; i++){ //on free les mallocs du tableau contenant les noms des éléments.
+	  free(chaine[i]);
 	}
-	
-	int taillechaine[nb_objects];
-	char *chaine[nb_objects];
-	int nb_caract=5;
-	int caract[nb_objects][nb_caract];
-	
-	for(int i = 0; i<nb_objects; i++){
-	  read(fichierMap,&taillechaine[i],sizeof(int));
-	  chaine[i]=malloc(taillechaine[i]*sizeof(char));
-	  for(int j=0; j<taillechaine[i]; j++){ 
-	    read(fichierMap, &chaine[i][j], sizeof(char));
-	  }	  
-	  for(int k=0; k<nb_caract;k++){
-	    read(fichierMap, &caract[i][k], sizeof(int));
-	  }
-	}
-	
-	int nouvellehauteur = h;
-	int newMap[nouvellehauteur][largeurMap];
-        memset(newMap, MAP_OBJECT_NONE, sizeof(newMap[nouvellehauteur][largeurMap])*nouvellehauteur*largeurMap);
-
-	int minihauteur;
-	if(nouvellehauteur<hauteurMap)
-	  minihauteur=nouvellehauteur;
-	else
-	  minihauteur=hauteurMap;
-	    
-	for(int i=0; i<minihauteur; i++){
-	  for(int j=0; j<largeurMap; j++){
-	    newMap[i][j]=saveMap[i][j];
-	  }
-	}
-	
-	ftruncate(fichierMap, 0); 
-	lseek(fichierMap, 0, SEEK_SET);
-	write(fichierMap, &largeurMap, sizeof(int));
-	write(fichierMap, &nouvellehauteur, sizeof(int));
-	write(fichierMap, &nb_objects, sizeof(int));
-	
-	for(int i=0; i<nouvellehauteur; i++){
-	  for(int j=0; j<largeurMap; j++){
-	    write(fichierMap, &newMap[i][j], sizeof(int));
-	  }
-	}
-	
-	for(int i=0; i<nb_objects; i++){
-	  write(fichierMap, &taillechaine[i], sizeof(int));
-	  for(int j=0; j<taillechaine[i]; j++){
-	    write(fichierMap, &chaine[i][j], sizeof(char));
-	  }
-	  for(int k=0; k<nb_caract; k++){
-	    write(fichierMap, &caract[i][k], sizeof(int));
-	  }
-        }
-	
 }
 
 void pruneObjects(int fichierMap){
@@ -409,7 +354,7 @@ void pruneObjects(int fichierMap){
 	int compteur[NB_OBJECT_MAX];
 	memset(compteur, 0, sizeof(int)*NB_OBJECT_MAX);
 	int id[10]={0,1,2,3,4,5,6,7,8,9};	
-	for(int i=0; i<hauteurMap; i++){
+	for(int i=0; i<hauteurMap; i++){ //pour chaque type d'éléments on compte son nombre d'occurences dans le fichier de la carte.
 	  for(int j=0; j<largeurMap; j++){
 	    for(int k=0; k<9; k++){
 	      if(saveMap[i][j]==id[k]){
@@ -425,17 +370,17 @@ void pruneObjects(int fichierMap){
 	write(fichierMap, &hauteurMap, sizeof(int));
 
 	int true_nb_objects=0;
-	for(int i=0; i<9; i++){
+	for(int i=0; i<9; i++){ //on détermine le nombre réel d'élements présent sur la carte. 
 	  if(compteur[i]!=0){
 	    true_nb_objects++;
 	  }
 	}
     
-	write(fichierMap, &true_nb_objects, sizeof(int));
+	write(fichierMap, &true_nb_objects, sizeof(int)); 
 	
 	int curseur=0;
 	int object_not_erase[true_nb_objects];
-	for(int i=0; i<9; i++){
+	for(int i=0; i<9; i++){ //on place dans un tableau, les id des élements présent sur la carte.
 	  if(compteur[i]!=0){
 	    object_not_erase[curseur]=i;
 	    curseur++;
@@ -447,7 +392,7 @@ void pruneObjects(int fichierMap){
 	}
 
         for(int i=0; i<nb_objects; i++){
-	    if(i==object_not_erase[i]){
+	  if(i==object_not_erase[i]){ //si l'id de l'élément est bien présent alors on l'écrit dans le fichier. 
 	     write(fichierMap, &taillechaine[i], sizeof(int));
 	     for(int j=0; j<taillechaine[i]; j++){
 	       write(fichierMap, &chaine[i][j], sizeof(char));
@@ -458,6 +403,9 @@ void pruneObjects(int fichierMap){
 	    }
 	}
 
+	for(int i=0; i<nb_objects; i++){ 
+	  free(chaine[i]);
+	}
 }
 
 
