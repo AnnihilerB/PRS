@@ -106,9 +106,7 @@ int verificationArgumentsSetObjects (char *argv[], int n, int fichierMap)
 	if (n % 6 != 0 || n / 6 < getObjects(fichierMap))
 		return ERRTAILLE;
 	
-	if (atoi(argv[1]) == 0)
-		return ERRNOM;
-	for (int i = 2; i < n; i++)	//on commence à 2 car si i = 0, i%6 == 6, donc on rentre pas dans la condition mais le premier argument est un nom d'image
+	for (int i = 0; i < n; i++)
 	{
 		//Si c'est une image
 		if (i % 6 == 0)
