@@ -40,7 +40,24 @@ Puis pour chaque objet :
 	
 \subsection{Chargement}
 
-
+\section{maputil}
+    Dans le main de maputil, on vérifie d'abord que le nombre d'arguments est d'au moins 2, puis on compare le deuxième argument aux différentes actions possibles. Et on vérifie également les erreurs possibles, comme l'ouverture du fichier map ou une erreurs dans les arguments.
+\subsection{getwidth, height, objects, info}
+    Chaque fonction get, se contente de se placer à la bonne position dans le fichier map et de renvoyer la valeur de la fonction lireEntierPositif, qui appel read et qui vérifie si il y a une erreur. Puis on affiche, tout en testant le retour de la fonction get. 
+\subsection{Remplacement des objets d'une carte}
+        \subsubsection{Fonction de verification des arguments}
+            Avant d'appeler la fonction setObjects, on va d'abord verifier les arguments avec la fonction verificationArgumentsSetObjects.
+            Dans cette fonction on vérfie d'abord si le nombre d'arguments est bon, donc pour ça on vérfifie d'abord si c'est un multiple 6, puisque l'utilisateur doit envoyer le nom de l'objet suivie des caractéristiques, ce qui fait plusieurs paquet de 6, de plus il faut vérifier que le nombre d'objets actuellement sur la carte est inférieur ou égale au nombre d'objets que l'utilisateur passe en parametre. Si la taille des arguments n'est pas bonne on renvoie ERRTAILLE
+            
+            Puis on vérifie les noms des arguments, pour ça, on vérifie si c'est bien un chiffre après le nom de l'image (le chiffre est la valeur de frame), donc pour ça, dans la boucle du parcours des arguments, si i est un multiple de 6 alors c'est que c'est une image et donc l'élement suivant doit être un chiffre, si ce n'est pas un chiffre on renvoie ERRNOM.
+            Ensuite on vérifie les arguments suivants, pour ça on utilise un tableau qui contient les noms "solid", "air", "collectible" ... et donc on compare les arguments avec les élements du tableau, si on ne retrouve pas l'argument dans le tableau on renvoie ERRNOM.
+            
+        \subsubsection{Fonction setobjects}
+            
+        
+    
+    
+\section{Gestion des temporisateurs}
 
 
 \end{document}
