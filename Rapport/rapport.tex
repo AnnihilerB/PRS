@@ -32,13 +32,22 @@ Puis pour chaque objet :
 \end{itemize}
 \subsection{Sauvegarde}
 
-	Concernant la sauvegarde, elle fonctionne partiellement. La sauvegarde en elle même ne pose aucun problème. Cependant, ils nous a été impossible de sauvegarder tous les objets de la carte en incluant ceux qui ne sont pas présents physiquement sur la carte. Elle ne concerne donc que les objets ayant une présence physique sur la carte.
-	Elle fonctionne de la manière suivante. En premier lieu des appels aux fonctions permettant de récupérer largeur et hauteurs sont effectués. Ces deux valeurs sont inscrites directement dans le fichier via la fonction \textit{write()}. Un tableau d'objets est ensuite crée afin de répertorier tous les objets différents. Il nous permettra via son parcours d'écrire les caractéritiques des objets. Une double boucle \textit{for} parcours ensuite toute la carte. Chaque objet est récupéré via la fonction \textit{map\_get(x,y)} et est stocké dans le tableau \textit{tab\_carte}. Ce tableau est de taille \textit{largeur * hauteur} et va contenir toute la matrice. Avoir un tableau de cette taille nous permet de n'avoir recours qu'à un seul appel à la fonction \textit{write()} Pour chaque objet, on regarde alors si il est nouveau. Si oui, il est ajouté au tableau des objets et le nombre d'objets est alors incrémenté.
-	A la fin de ce parcours le nombre d'objets ainsi que le tableau \textit{tab\_carte} sont écrits dans le fichier de sauvegarde.
+	La sauvegarde est pleinenement fonctionnelle. Tous les objets sont sauvegardés y compris ceux n'ayant aucune présence physique sur la carte. Il est donc possible d'utiliser tous les objets ultérieurement.
 	
-	Par la suite, un tableau de caractétiques est créé. De manière analogue au tableau de la carte, ce tableau nous permet de n'effectuer qu'un seul write par objet. Un boucle ayant pour longueur le nombre d'objets parcours le tableau d'objets. On récupère d'abord le nom de l'objet via la méthode \textit{map\_get\_name()} ensuite est calculé la longueur de ce nom via la fonction \textit{strlen()}. Une fois ceci fait, chaque case du tableau de caractéristiques sera rempli avec une caractéristique via les appels de fonctions correspondant. En fin de boucle sont écrits la taille du nom, le nom de l'objet et le tableau de caractéristiques.
+	Si la création du fichier de sauvegarde ne se déroule pas correctement, un message est affiché sur la sortie standard d'erreur et le code d'erreur est renvoyé à l'utilisateur.
+	Le sauvegaarde débute par la largeur et la hauteur et le nombre d'objets. Ces valeurs sont inscrites directement dans le fichier via la fonction \textit{write()}. 
+	Par la suite, un tabeleau de taille \textit{largeur * hauteur} est créé. Un tableau de cette taille permet de stocker l'intégralité de la carte en un seul parcours et de n'effectuer qu'un seul appel bufferisé à \textit{write()}.
 	
+	Un tableau du nombre de caractéristiques est ensuite créé. Il permettra de façon similaire au tableau de la carte, de n'effectuer qu'un seul appel à appel à \textit{write()} pour sauvegarder toutes les caractéristiques en une seule fois dans le fichier de sauvegarde.
+
 \subsection{Chargement}
+
+	Pour charger une carte, le fichier de sauvegarde est ouvert. Une vérification du bon déroulement de l'ouverture est fait. Si une erreur se produit, le code de l'erreur est affiché sur la sortie standard. La fonction commence par lire la largeur, la hauteur et le nombre d'objets. Une nouvelle carte est ensuite allouée. Une double boucle de la taille de la carte place tous les objets. A chaque itération un appel à \textit{read()} est effectué pour lire l'ID de l'objet dans la matrice et le placer sur le carte via un appel à \textit{map\_set()}.
+	
+	Il faut maintenant récupérer le nom de chaque objet ainsi que ses caractéritiques. Un appel à la fonction \textit{map\_object\_begin()} est effectué pour initier l'allocation des objets. Un boucle de la taille du nombre d'objets est effectué et lit pour chaque objet la taille du nom de l'objet et extrait le nom de cet objet. Lors de cette lecture le premier objet lu dans le fichier aura l'ID 0 ce qui correspond bien à l'ordre d'enregistrement lors de la sauvegarde. Les caractéristiques des objets sont ensuite lues dans le fichier. Ces dernières sont passées en paramètre à la fonction \textit{generer\_flags()} qui se charge de générer un seul entier contenant la solidité de l'objet et les flags actif c'est-à-dire à 1. L'allocation est ensuite faite via la fonction \textit{map\_object\_add}.
+	
+	La sauvegarde et le chargement ont été rélaisé ainsi dans le but de minimiser les apples systèmes. Cependant il ne nous a pas été possible de lire le nom du fichier à l'aide d'un seul appel système. En effet, pour les noms de fichiers de 16 caractères exactement, le lecture résultait en l'ajout de caractères aléatoires à la fin du nom de l'objet. Il a donc fallu lire caractère le nom du fichier pour s'assurer que le nom n'est pas erroné. 
+	
 
 \section{maputil}
     Dans le main de maputil, on vérifie d'abord que le nombre d'arguments est d'au moins 2, puis on compare le deuxième argument aux différentes actions possibles. Et on vérifie également les erreurs possibles, comme l'ouverture du fichier map ou une erreurs dans les arguments.
@@ -59,12 +68,33 @@ Puis pour chaque objet :
             Ensuite on supprime le contenu du fichier sans supprimer les 2*sizeof(int) premier octets (qui sont la largeur et la hauteur), puis on écrit à la fin du fichier map la nouvelle valeur du nombre d'objet et la matrice.
             
             Enfin on écrit la nouvelle liste, pour ça on a une boucle qui va de 0 au nombre d'arguments, si i est un multiple de 6, alors c'est qu'on a une chaîne de caractère à écrire, donc comme notre convention l'exige, on doit écrire, dans le fichier map, la taille de la chaine. Donc on écrit la taille de la chaine, puis la chaine, puis le frame. On écrit le frame directement ici car il est traité différement des autres arguments.
-            Pour les autres arguments, on parcout le tableau des caracteristiques, si l'argument est à l'index 0, 1 ou 2  on écrit 0, 1 ou 2 puisque c'est soit "solid" soit "semi-solid" soit "air". Si l'argument est à l'index 3,4 ou 5 on écrit 1 puisque c'est "collectible", "destructible" ou "generator", et sinon on écrit 0. 
+            Pour les autres arguments, on parcourt le tableau des caractéristiques, si l'argument est à l'index 0, 1 ou 2  on écrit 0, 1 ou 2 puisque c'est soit "solid" soit "semi-solid" soit "air". Si l'argument est à l'index 3,4 ou 5 on écrit 1 puisque c'est "collectible", "destructible" ou "generator", et sinon on écrit 0. 
             
         
     
-    
+ 
 \section{Gestion des temporisateurs}
+
+	Afin de gérer des évenements dépendant du temps, nous avons une structrure de données semblable à une liste doublement chainée. Cette liste contient un évenement, le suivant, le précédent, le temps courant et le paramètre. La liste est triée chonologiquement de sorte que le premier élément soit toujours celui dont le temps d'éxecution est le plus petit. 
+	
+	Les primitives mises en place sont celles nous donnant accès au premier élément de la liste ainsi que la suppression du premier élément. Nous avons opté pour un telle liste afin d'avoir comme premier élément l'événement le proche de sa fin en premier. Cela facilite le processus de suppression. Lors de l'ajout d'un objet, il est ajouté en fin de liste et la liste est ensuite triée.
+	
+	Cette liste nous permet de n'avoir à gérer que la tête de liste. Les autres éléments sont tirés en ordre croissants et chaque élément deviendra le premier à mesure que l'ancin premier élément expire. Il rest juste à gérer les calculs de temps pour de multiples objets.
+
+\subsection{Implémentation simple}
+
+	L'appel à \textit{timer\_init()} en début de jeu nous permet d'allouer notre structure et de mettre en place le thread qui va réceptionner les événements. Le programme principal ne peut donc pas recevoir le signal, seul le thread le pourra. 
+	
+	Lorsqu'un événement se produit, une nouvel élément de la liste est alloué. Le délai d'activation de cet événement est calculé et placé dans la structure de temps de l'élément. On ajoute également à l'élément le paramètre de l'événement. Le paramètre est ensuite ajouté à la liste, le timer est déclenché et la liste est ensuite triée.
+	
+	Le thread se chargeant de l'éxecution du signal attend sa délivrance. Une fois le signal délivré, l'action du premier élément de la file est executé. L'élément est ensuite supprimé et la liste est à nouveau triée. Ce deuxième tri permet de s'assurer que la liste reste triée. Un autre timer est ensuite armé si il reste encore un élément dans la liste.
+	
+	Avec un seul objet, l'événement courant est toujours le premier de la liste. Il est donc facile de traiter cet événement puisqu'aucun calcul de temps n'a lieu, armer les temporisateurs suffit à gérer l'événement tout seul.
+	
+	\subsection{Implémentation complète} 
+
+
+
 
 
 \end{document}
