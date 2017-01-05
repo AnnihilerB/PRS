@@ -157,13 +157,10 @@ int setObjects(char **argv, int nombre_args, int fichierMap)
 	      {
 		      int tailleChaine = strlen(argv[i]);
 	              write(fichierMap, &tailleChaine, sizeof(int));
-		      printf("%d", tailleChaine);
 		      write(fichierMap, argv[i], tailleChaine*sizeof(char));
-		      printf("%s", argv[i]);
 	              i ++;
                       int frame = atoi(argv[i]);
                       write(fichierMap, &frame, sizeof(int));
-                      printf("%d", frame);
 	      }
 	      //Ecriture des caractéristiques.
 	      else
@@ -183,7 +180,6 @@ int setObjects(char **argv, int nombre_args, int fichierMap)
 					           flags = 1;
 
 					      write(fichierMap, &flags, sizeof(int));
-                                              printf("%d", flags);
 				      }
 				      break;
 			      }
@@ -191,7 +187,6 @@ int setObjects(char **argv, int nombre_args, int fichierMap)
 		      }
 	      }
 	}
-	printf("\n");
 	
 	
 }
