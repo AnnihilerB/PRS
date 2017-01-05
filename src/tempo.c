@@ -26,6 +26,7 @@ struct elem_file{
     struct itimerval it;
     struct elem_file *next;
     struct elem_file *pre;
+    unsigned long temps;
 };
 
 // Return number of elapsed µsec since... a long time ago
@@ -45,10 +46,13 @@ static unsigned long get_time (void)
 
 // Routine de traitement
 void routine(int sig){
-    fprintf (stderr, "sdl_push_event(%p) appelée au temps %ld\n", File->first->param_event, get_time ());
+   // fprintf (stderr, "sdl_push_event(%p) appelée au temps %ld\n", File->first->param_event, get_time ());
 }
 
 void* demon (void* arg){
+    
+    struct itimerval it;
+    getitimer(ITIMER_REAL, &it);
     
     //Strucure obligatoire car SIGALRM fait quitter le programme si il n'est pas traité par un handler.
     struct sigaction s;
@@ -64,22 +68,19 @@ void* demon (void* arg){
     //Suppression de SIGALRM du masque pour qu'il puisse être délivré. Il est le seul signal non bloqué.
     sigdelset(&mask, SIGALRM);
     
-    fprintf(stderr, "Thread de pid : %d\n", getpid());
-    
     //Boucle pour traiter les events en continu.
     while(1){
         //Attente de SIGALRM
         sigsuspend(&mask);
-        fprintf(stderr, "Apres sigsuspend\n");
-        //traitement de l'event
+
         
+        //traitement de l'event
         sdl_push_event(File->first->param_event);
         pthread_mutex_lock(&mux);
         supprimer_premier_element_file();
         pthread_mutex_unlock(&mux);
-        fprintf(stderr, "Apres pushevent\n");
-        
-        
+        setitimer(ITIMER_REAL, &File->first->it, NULL);
+        triFile();
         
     }
 }
@@ -99,7 +100,6 @@ int timer_init (void)
     
     sigprocmask(SIG_BLOCK, &block_mask, NULL);
 
-    fprintf(stderr, "Create\n");
     pthread_create(&th, NULL, demon, NULL);
     
     File = malloc(sizeof(struct file));
@@ -111,20 +111,26 @@ int timer_init (void)
 }
 void triFile()
 {
+    
     struct itimerval it;
-    getitimer(ITIMER_REAL, &it);
+    
     long delai_restant_premier_elem = it.it_value.tv_sec*1000 + it.it_value.tv_usec/1000;
-    struct elem_file *e = File->first->next;
-    if (e != NULL)
+    
+    struct elem_file *e;
+    if (File->first != NULL && File->first->next != NULL)
     {
+        e = File->first->next;
         while (e->next != NULL)
         {
             long temps = e->next->it.it_value.tv_usec/1000 + e->next->it.it_value.tv_sec*1000;   
-            if (delai_restant_premier_elem > temps - delai_restant_premier_elem)
+            
+            if (delai_restant_premier_elem < temps - delai_restant_premier_elem)
             {
+                printf("Dans if tri\n");
                 if (e == File->first->next)
                 {
-                    e->next->pre = File->first;
+                    printf("premier\n");
+                    e->next->pre = File->first->next;
                     File->first->pre = e;
                     File->first->next = e->next;
                     File->first = e;
@@ -132,27 +138,23 @@ void triFile()
                 }
                 else
                 {
+                    printf("deuxieme\n");
                     e->next->pre = e->pre;
                     e->pre->next = e->next;
                     e->pre = e->next;
                     e->next = e->next->next;
                     e->pre->next = e;
                 }
-                
-                e->it.it_value.tv_sec -= it.it_value.tv_sec;
-                e->it.it_value.tv_usec -= it.it_value.tv_usec;
             }
             e = e->next;
         }
     }
 }
 void timer_set (Uint32 delay, void *param)
-{        
+{       
     long int sec = delay / 1000;
     // Recuperation du reste de la division par mille et conversion en micro-secondes
     long int micro = (delay % 1000) * 1000;
-    
-    fprintf(stderr, "Delay : %d, sec : %ld, micro : %ld\n", delay, sec, micro);
     
     struct itimerval it;
     
@@ -171,32 +173,34 @@ void timer_set (Uint32 delay, void *param)
         elem->next = elem->pre = NULL;
         elem->param_event = param;
         elem->it = it;
+        elem->temps = get_time();
         pthread_mutex_lock(&mux);
         ajouter_element_file(elem);
-        triFile();
-        afficherFile();
         pthread_mutex_unlock(&mux);
         sup_elem_file = false;
-        setitimer(ITIMER_REAL, &File->first->it, NULL); 
+        elem->temps = get_time();
+        setitimer(ITIMER_REAL, &File->first->it, NULL);
+        triFile();
+        afficherFile();
         
-   
-    
-
-    
+        
 }
 
 void ajouter_element_file(struct elem_file *e)
 {
+    printf("Ajout\n");
     if (File->first == NULL)
     {
-        printf("test\n");
+        printf("if\n");
         File->first = e;
         File->first->next = File->first->pre = NULL;
     }
     else{
+        printf("else\n");
         struct elem_file *el;
         el = File->first;
         while (el->next != NULL){
+            printf("while\n");
             el = el->next;
         }
         e->pre = el;
@@ -211,9 +215,7 @@ void supprimer_premier_element_file()
     {
          File->first->pre = NULL;
          File->first = File->first->next;
-         if (File->first != NULL && File->first->next != NULL)
-            File->first->next->pre = File->first;
-         printf("caca\n");
+         //afficherFile();
     }
 }
 void afficherFile()
@@ -221,7 +223,7 @@ void afficherFile()
     struct elem_file *e;
     e = File->first;
     do{
-        printf("%p: temps %d et %d --> ", e, e->it.it_value.tv_sec, e->it.it_value.tv_usec);
+        printf("%p: temps %d et %d adresse --> ", e, e->it.it_value.tv_sec, e->it.it_value.tv_usec);
         e = e->next;
     }while(e != NULL);
     printf("\n");
