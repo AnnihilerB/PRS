@@ -53,6 +53,13 @@ Puis pour chaque objet :
             Ensuite on vérifie les arguments suivants, pour ça on utilise un tableau qui contient les noms "solid", "air", "collectible" ... et donc on compare les arguments avec les élements du tableau, si on ne retrouve pas l'argument dans le tableau on renvoie ERRNOM.
             
         \subsubsection{Fonction setobjects}
+            L'idée globale de la fonction c'est de supprimer dans le fichier tout sauf la hauteur et la largeur, pour pouvoir changer le nombre d'objet, et écrire la nouvelle liste.
+            
+            Pour ça on commence par se placer dans le fichier, au début de la matrice de la carte, puis on sauvegarde la matrice en lisant ligne par ligne (puisque on sait qu'une ligne est de taille largeur*sizeof(int) octets).
+            Ensuite on supprime le contenu du fichier sans supprimer les 2*sizeof(int) premier octets (qui sont la largeur et la hauteur), puis on écrit à la fin du fichier map la nouvelle valeur du nombre d'objet et la matrice.
+            
+            Enfin on écrit la nouvelle liste, pour ça on a une boucle qui va de 0 au nombre d'arguments, si i est un multiple de 6, alors c'est qu'on a une chaîne de caractère à écrire, donc comme notre convention l'exige, on doit écrire, dans le fichier map, la taille de la chaine. Donc on écrit la taille de la chaine, puis la chaine, puis le frame. On écrit le frame directement ici car il est traité différement des autres arguments.
+            Pour les autres arguments, on parcout le tableau des caracteristiques, si l'argument est à l'index 0, 1 ou 2  on écrit 0, 1 ou 2 puisque c'est soit "solid" soit "semi-solid" soit "air". Si l'argument est à l'index 3,4 ou 5 on écrit 1 puisque c'est "collectible", "destructible" ou "generator", et sinon on écrit 0. 
             
         
     
