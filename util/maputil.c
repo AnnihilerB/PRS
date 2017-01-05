@@ -11,9 +11,6 @@
 #define MAP_OBJECT_SEMI_SOLID    1
 #define MAP_OBJECT_SOLID         2
 
-#define MAP_OBJECT_DESTRUCTIBLE  4
-#define MAP_OBJECT_COLLECTIBLE   8
-#define MAP_OBJECT_GENERATOR     16
 #define NB_CARACTERISTIQUES 9
 #define MAP_OBJECT_NONE -1
 #define NB_OBJECT_MAX 10
@@ -159,7 +156,17 @@ int setObjects(char **argv, int nombre_args, int fichierMap)
 	{
 		//Ecriture du nom des fichiers d'images
 	      if (i % 6 == 0)
-		      write(fichierMap, argv[i], strlen(argv[i]));
+	      {
+		      int tailleChaine = strlen(argv[i]);
+	              write(fichierMap, &tailleChaine, sizeof(int));
+		      printf("%d", tailleChaine);
+		      write(fichierMap, argv[i], tailleChaine*sizeof(char));
+		      printf("%s", argv[i]);
+	              i ++;
+                      int frame = atoi(argv[i]);
+                      write(fichierMap, &frame, sizeof(int));
+                      printf("%d", frame);
+	      }
 	      //Ecriture des caractéristiques.
 	      else
 	      {
@@ -171,16 +178,14 @@ int setObjects(char **argv, int nombre_args, int fichierMap)
 			    	  //Solidité de l'objet
 				      if (index_cara >= 0 && index_cara < 3)
 					      write(fichierMap, &index_cara, sizeof(int));
-				      else
+				      else 
 				      {
-					      int flags;
-					      if (index_cara == 3)
-						flags = MAP_OBJECT_COLLECTIBLE;
-					      else if (index_cara == 4)
-						flags = MAP_OBJECT_DESTRUCTIBLE;
-					      else
-						flags = MAP_OBJECT_GENERATOR;
+					      int flags = 0;
+					      if (index_cara >= 3 && index_cara < 6)	
+					           flags = 1;
+
 					      write(fichierMap, &flags, sizeof(int));
+                                              printf("%d", flags);
 				      }
 				      break;
 			      }
@@ -188,6 +193,7 @@ int setObjects(char **argv, int nombre_args, int fichierMap)
 		      }
 	      }
 	}
+	printf("\n");
 	
 	
 }
