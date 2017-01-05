@@ -108,7 +108,7 @@ int verificationArgumentsSetObjects (char *argv[], int n, int fichierMap)
 	
 	if (atoi(argv[1]) == 0)
 		return ERRNOM;
-	for (int i = 2; i < n; i++)	//on commence à 2 car le premier est le chemin de l'image et un chiffre
+	for (int i = 2; i < n; i++)	//on commence à 2 car si i = 0, i%6 == 6, donc on rentre pas dans la condition mais le premier argument est un nom d'image
 	{
 		//Si c'est une image
 		if (i % 6 == 0)
