@@ -55,7 +55,7 @@ Puis pour chaque objet :
     Chaque fonction get, se contente de se placer à la bonne position dans le fichier map et de renvoyer la valeur de la fonction lireEntierPositif, qui appel read et qui vérifie si il y a une erreur. Puis on affiche, tout en testant le retour de la fonction get. 
 \subsection{Remplacement des objets d'une carte}
         \subsubsection{Fonction de verification des arguments}
-            Avant d'appeler la fonction setObjects, on va d'abord verifier les arguments avec la fonction verificationArgumentsSetObjects.
+            Avant d'appeler la fonction setObjects, on va d'abord verifier les arguments avec la fonction \textit{verificationArgumentsSetObjects}.
             Dans cette fonction on vérfie d'abord si le nombre d'arguments est bon, donc pour ça on vérfifie d'abord si c'est un multiple 6, puisque l'utilisateur doit envoyer le nom de l'objet suivie des caractéristiques, ce qui fait plusieurs paquet de 6, de plus il faut vérifier que le nombre d'objets actuellement sur la carte est inférieur ou égale au nombre d'objets que l'utilisateur passe en parametre. Si la taille des arguments n'est pas bonne on renvoie ERRTAILLE
             
             Puis on vérifie les noms des arguments, pour ça, on vérifie si c'est bien un chiffre après le nom de l'image (le chiffre est la valeur de frame), donc pour ça, dans la boucle du parcours des arguments, si i est un multiple de 6 alors c'est que c'est une image et donc l'élement suivant doit être un chiffre, si ce n'est pas un chiffre on renvoie ERRNOM.
@@ -100,13 +100,17 @@ La dernière partie est identique à celle de la fonction \textit{setWidthHeight
 
 	L'appel à \textit{timer\_init()} en début de jeu nous permet d'allouer notre structure et de mettre en place le thread qui va réceptionner les événements. Le programme principal ne peut donc pas recevoir le signal, seul le thread le pourra. 
 	
-	Lorsqu'un événement se produit, une nouvel élément de la liste est alloué. Le délai d'activation de cet événement est calculé et placé dans la structure de temps de l'élément. On ajoute également à l'élément le paramètre de l'événement. Le paramètre est ensuite ajouté à la liste, le timer est déclenché et la liste est ensuite triée.
+	Lorsqu'un événement se produit, une nouvel élément de la liste est alloué. Le délai d'activation de cet événement est calculé et placé dans la structure de temps de l'élément. On ajoute également à l'élément le paramètre de l'événement. Le paramètre est ensuite ajouté à la liste et le timer est déclenché.
 	
-	Le thread se chargeant de l'éxecution du signal attend sa délivrance. Une fois le signal délivré, l'action du premier élément de la file est executé. L'élément est ensuite supprimé et la liste est à nouveau triée. Ce deuxième tri permet de s'assurer que la liste reste triée. Un autre timer est ensuite armé si il reste encore un élément dans la liste.
+	Le thread se chargeant de l'éxecution du signal attend sa délivrance. Une fois le signal délivré, l'action du premier élément de la file est executé. L'élément est ensuite supprimé.  Un autre timer est ensuite armé si il reste encore un élément dans la liste.
 	
 	Avec un seul objet, l'événement courant est toujours le premier de la liste. Il est donc facile de traiter cet événement puisqu'aucun calcul de temps n'a lieu, armer les temporisateurs suffit à gérer l'événement tout seul.
 	
 	\subsection{Implémentation complète} 
+    L'implémentation complète ne marche pas comme il le faudrait, les élements s'activent dans l'ordre, mais par exemple si on a n bombes sur la carte, il faut attendre que la mèche de la nième bombe soit terminée pour que la première lance son timer d'explosion. Nous avons essayé de corriger cela en triant la file; mais nous nous sommes aperçu trop tard que notre tri n'était pas le bon pour ce problème. En plus du tri nous n'avons pas trouvé comment transmettre le bon temps restant à chaque élément. Mais donc nous avons mis en commentaires les appels à \textit{triFile}.
+    
+    Notre tri marche ainsi:
+    Nous commencons par récupérer depuis combien de temps le timer du premier élément est lancé, avec la fonction \textit{getitimer}, puis on compare cette valeur avec le temps de temporisation des autres éléments. Et donc si le temps du premier élément est supérieur au suivant on les inverses. 
 
 
 

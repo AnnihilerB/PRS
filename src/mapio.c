@@ -114,6 +114,7 @@ void map_save (char *filename)
             tab_cara[2] = map_is_destructible(i);
             tab_cara[3] = map_is_collectible(i);
             tab_cara[4] = map_is_generator(i);
+            printf(" test de merde: %d et %d", tab_cara[4], tab_cara[2]);
 
             write(map, &tab_cara, NB_CARACTERISTIQUES * sizeof(int));
         }
