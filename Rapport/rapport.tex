@@ -72,7 +72,12 @@ Puis pour chaque objet :
             
 \subsection{Modification de la taille de la carte}
 \quad Le but de cette fonction est de permettre l'agrandissement ou la diminution en hauteur ou en largeur de la taille de la carte du jeu.\\
-\quad Dans le main du fichier maputil.c on vérifie si l'utilisateur a bien choisi une des deux set, si les informations sont correctes on lance la fonction unique \textit{setWidthHeight} avec les paramètres contenant : \\-la valeur de la hauteur ou largeur.\\-le type de la dimension (largeur ou hauteur)\\-le fichier contenant les informations de la carte.\\
+\quad Dans le main du fichier maputil.c on vérifie si l'utilisateur a bien choisi une des deux set, si les informations sont correctes on lance la fonction unique \textit{setWidthHeight} avec les paramètres contenant :\\
+\begin{itemize}
+\item la valeur de la hauteur ou largeur.
+\item le type de la dimension (largeur ou hauteur).
+\item le fichier contenant les informations de la carte.
+\end{itemize}
 \quad La fonction est découpé en 3 parties, la lecture et le stockage des informations du fichier map, la création de la nouvelle matrice contenant les éléments en fonction de la nouvelle dimension que l'utilisateur a donné en argument et enfin la réécriture des informations dans le fichier map.\\
 \quad Pour récupérer les informations du fichier map d'origine on utilise la fonction read et on stocke chacune des informations dans des variables ou des tableaux. La taille du tableaux contenant la chaine de caractère définissant un élément du jeu n'étant pas connu lors de son utilisation, nous avons eu à utiliser un malloc pour allouer l'espace nécessaire en fonction de valeur de l'entier contenant la taille de la chaine récupéré précédemment.\\
 \quad Une fois les informations récupérées on définit la nouvelle largeur et hauteur en fonction de la valeur placé en argument de la fonction et on initialise la nouvelle matrice en fonction de cette nouvelle donnée et on initialise la valeurs de ses cases à \textit{MAP\_OBJECT\_NONE} pour que chaque case correspondent à l'identifiant d'un block vide sur la carte. On remplit ensuite la nouvelle matrice avec les valeurs de l'ancienne, si les nouvelle dimensions sont plus petites que les anciennes certains objets peuvent être perdus.\\
