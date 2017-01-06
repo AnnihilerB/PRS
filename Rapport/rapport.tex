@@ -49,7 +49,7 @@ Puis pour chaque objet :
 	La sauvegarde et le chargement ont été rélaisé ainsi dans le but de minimiser les apples systèmes. Cependant il ne nous a pas été possible de lire le nom du fichier à l'aide d'un seul appel système. En effet, pour les noms de fichiers de 16 caractères exactement, le lecture résultait en l'ajout de caractères aléatoires à la fin du nom de l'objet. Il a donc fallu lire caractère le nom du fichier pour s'assurer que le nom n'est pas erroné. 
 	
 
-\section{maputil}
+\section{Maputil}
     Dans le main de maputil, on vérifie d'abord que le nombre d'arguments est d'au moins 2, puis on compare le deuxième argument aux différentes actions possibles. Et on vérifie également les erreurs possibles, comme l'ouverture du fichier map ou une erreurs dans les arguments.
 \subsection{getwidth, height, objects, info}
     Chaque fonction get, se contente de se placer à la bonne position dans le fichier map et de renvoyer la valeur de la fonction lireEntierPositif, qui appel read et qui vérifie si il y a une erreur. Puis on affiche, tout en testant le retour de la fonction get. 
@@ -70,8 +70,18 @@ Puis pour chaque objet :
             Enfin on écrit la nouvelle liste, pour ça on a une boucle qui va de 0 au nombre d'arguments, si i est un multiple de 6, alors c'est qu'on a une chaîne de caractère à écrire, donc comme notre convention l'exige, on doit écrire, dans le fichier map, la taille de la chaine. Donc on écrit la taille de la chaine, puis la chaine, puis le frame. On écrit le frame directement ici car il est traité différement des autres arguments.
             Pour les autres arguments, on parcourt le tableau des caractéristiques, si l'argument est à l'index 0, 1 ou 2  on écrit 0, 1 ou 2 puisque c'est soit "solid" soit "semi-solid" soit "air". Si l'argument est à l'index 3,4 ou 5 on écrit 1 puisque c'est "collectible", "destructible" ou "generator", et sinon on écrit 0. 
             
-        
+\subsection{Modification de la taille de la carte}
+\quad Le but de cette fonction est de permettre l'agrandissement ou la diminution en hauteur ou en largeur de la taille de la carte du jeu.\\
+\quad Dans le main du fichier maputil.c on vérifie si l'utilisateur a bien choisi une des deux set, si les informations sont correctes on lance la fonction unique \textit{setWidthHeight} avec les paramètres contenant : \\-la valeur de la hauteur ou largeur.\\-le type de la dimension (largeur ou hauteur)\\-le fichier contenant les informations de la carte.\\
+\quad La fonction est découpé en 3 parties, la lecture et le stockage des informations du fichier map, la création de la nouvelle matrice contenant les éléments en fonction de la nouvelle dimension que l'utilisateur a donné en argument et enfin la réécriture des informations dans le fichier map.\\
+\quad Pour récupérer les informations du fichier map d'origine on utilise la fonction read et on stocke chacune des informations dans des variables ou des tableaux. La taille du tableaux contenant la chaine de caractère définissant un élément du jeu n'étant pas connu lors de son utilisation, nous avons eu à utiliser un malloc pour allouer l'espace nécessaire en fonction de valeur de l'entier contenant la taille de la chaine récupéré précédemment.\\
+\quad Une fois les informations récupérées on définit la nouvelle largeur et hauteur en fonction de la valeur placé en argument de la fonction et on initialise la nouvelle matrice en fonction de cette nouvelle donnée et on initialise la valeurs de ses cases à \textit{MAP\_OBJECT\_NONE} pour que chaque case correspondent à l'identifiant d'un block vide sur la carte. On remplit ensuite la nouvelle matrice avec les valeurs de l'ancienne, si les nouvelle dimensions sont plus petites que les anciennes certains objets peuvent être perdus.\\
+\quad On doit ensuite réécrire l'intégralité du fichier map, pour cela on commence déjà par effacer l'intégralité du contenu du fichier map d'origine avec la fonction \textit{ftruncate}, on place ensuite le curseur au début du fichier avec \textit{lseek} puis on écrit dans le fichier avec \textit{write}. On supprime enfin les allocations crées pour le tableau chaine avec une nouvelle boucle for.        
     
+\subsection{Suppression des objets non utilisés}
+\quad La fonction \textit{pruneObjects} permet de supprimer les objets qui ne sont pas présents sur la carte du jeu mais enregistrer dans le fichier map.\\
+\quad On commence d'abord par lire le fichier map et on stockent les valeurs dans des variables. Après cela un tableau de compteur est utilisé pour trouvé le nombre d'occurences de chaque objet dans la carte et donc savoir quel type d'objet est présent. On se sert ensuite d'une boucle pour déterminer les identifiants des objets présent sur la carte.\\
+La dernière partie est identique à celle de la fonction \textit{setWidthHeight} à la différence que l'on écrit dans le fichier map seulement les objets ayant l'identifiant contenue dans le tableau crée précédemment.
  
 \section{Gestion des temporisateurs}
 
